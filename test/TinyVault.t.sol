@@ -458,17 +458,18 @@ contract TinyVaultTest is Test {
         assertApproxEqAbs(_coll(amaka) + _coll(tunde) + _coll(owner), mezo.getTroveColl(address(vault)), 4);
     }
 
-    function testFuzz_repayNeverStrandsDebt(uint64 b1, uint64 part) public {
+    function testFuzz_repayNeverStrandsDebt(uint256 b1, uint256 part) public {
         uint256 borrow1 = bound(b1, 10e18, 190e18);
         _open(amaka, 300, borrow1);
         uint256 d = _debt(amaka);
+        deal(address(musd), amaka, d); // enough to cover the fees too
         uint256 p = bound(part, 1, d);
         vm.startPrank(amaka);
         musd.approve(address(vault), type(uint256).max);
         vault.repay(p, address(0), address(0));
         vm.stopPrank();
         assertApproxEqAbs(_debt(amaka), d - p, 2);
-        _repayAll(amaka);
+        if (_debt(amaka) > 0) _repayAll(amaka);
         assertEq(_debt(amaka), 0);
         assertApproxEqAbs(_sumDebts() + vault.idle(), mezo.getTroveDebt(address(vault)) - 200e18, DUST);
     }
