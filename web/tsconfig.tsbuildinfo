@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/state.tsx","./src/vite-env.d.ts","./src/components/AccountPanel.tsx","./src/components/Accounts.tsx","./src/components/VaultPanel.tsx","./src/components/ui.tsx","./src/lib/actions.ts","./src/lib/chain.ts","./src/lib/config.ts","./src/lib/data.ts","./src/lib/format.ts","./src/lib/vaultAbi.ts"],"version":"5.9.3"}
