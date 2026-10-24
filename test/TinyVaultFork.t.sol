@@ -169,6 +169,10 @@ contract TinyVaultForkTest is Test {
     }
 }
 
+interface ITroveManagerIcr {
+    function getCurrentICR(address borrower, uint256 price) external view returns (uint256);
+}
+
 interface ISortedTrovesLike {
     function getLast() external view returns (address);
     function getPrev(address id) external view returns (address);
@@ -234,16 +238,18 @@ contract TinyVaultForkRedemptionTest is TinyVaultForkTest {
         ISortedTrovesLike st = ISortedTrovesLike(BO.sortedTroves());
         uint256 amount;
         uint256 n;
+        price = _price();
         for (address t = st.getLast(); t != address(vault) && t != address(0); t = st.getPrev(t)) {
+            // Mezo skips troves already under its 110% line; they are not redeemed.
+            if (ITroveManagerIcr(address(tm)).getCurrentICR(t, price) < 1.1e18) continue;
             (, uint256 p, uint256 i,,,) = tm.getEntireDebtAndColl(t);
             amount += p + i - 200e18;
             n++;
         }
         amount += extra;
-        console.log("troves ahead of ours", n);
+        console.log("troves redeemed ahead of ours", n);
         console.log("redeeming (MUSD)", amount / 1e18);
 
-        price = _price();
         (address first, uint256 partialNicr,) = HINTS.getRedemptionHints(amount, price, 0);
         (address up, address down) = st.findInsertPosition(partialNicr, address(0), address(0));
         address redeemer = makeAddr("redeemer");
