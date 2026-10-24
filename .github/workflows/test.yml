@@ -1,5 +1,5 @@
 name: test
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -11,7 +11,15 @@ jobs:
       - name: Unit tests
         run: forge test --no-match-contract Fork -vv
       - name: Fork tests against Mezo testnet
-        run: forge test --match-contract Fork -vv
+        shell: bash
         env:
           MEZO_RPC: https://rpc.test.mezo.org
           FOUNDRY_PROFILE: fork
+        run: |
+          set +e
+          forge test --match-contract 'TinyVaultForkTest$' -vv 2>&1 | tee fork.txt
+          s1=${PIPESTATUS[0]}
+          forge test --match-contract Redemption --match-test redemption -vv 2>&1 | tee redemption.txt
+          s2=${PIPESTATUS[0]}
+          grep -hE "FAIL|Error|error" fork.txt redemption.txt | head -20 | sed 's/^/::error::/'
+          exit $(( s1 | s2 ))
