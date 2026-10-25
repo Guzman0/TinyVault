@@ -320,9 +320,8 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         v.coll = _effectiveColl(a, lossAcc, gainAcc);
         v.debt = closed ? 0 : _accountDebt(account, a.shares);
         uint256 price = priceFeed.fetchPrice();
-        uint256 value = v.coll * price / ONE;
-        v.ratio = v.debt == 0 ? type(uint256).max : value * ONE / v.debt;
-        uint256 cap = value * ONE / openRatio;
+        v.ratio = v.debt == 0 ? type(uint256).max : Math.mulDiv(v.coll, price, v.debt);
+        uint256 cap = Math.mulDiv(v.coll, price, openRatio);
         v.maxBorrow = cap > v.debt ? cap - v.debt : 0;
         v.closePrice = v.debt == 0 || v.coll == 0 ? 0 : Math.mulDiv(v.debt, closeRatio, v.coll);
     }

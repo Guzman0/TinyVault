@@ -55,6 +55,14 @@ FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contr
 
 6 tests against **Mezo's real MUSD contracts** on a fork of testnet: opening the shared trove, a $100 loan against $300 of BTC, the per-account limit, closing one account after a 20% price drop while another is untouched, growing past the trove's opening capacity, and a real Mezo redemption run through every riskier trove on testnet into the vault, split by debt within 0.2%. Mezo's price feed reads a chain precompile that a forked EVM cannot run, so the tests read the live price from the network and serve it to the fork.
 
+## Keeper
+
+`keeper/` closes accounts that fall below 125%, so the vault does not depend on someone noticing. Anyone can run it; the closer earns 5% on each close. `keeper/fork-demo.sh` shows it closing one account after a 23% BTC drop on a fork of Mezo testnet, with the other accounts untouched. See [keeper/README.md](keeper/README.md).
+
+## Security
+
+Slither static analysis was run on the vault; the one real finding (rounding in a view) is fixed and the rest are reviewed in [SECURITY.md](SECURITY.md), with the known limits.
+
 ## Run the app
 
 ```

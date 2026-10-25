@@ -1,0 +1,8 @@
+{
+  "name": "tinyvault-keeper",
+  "private": true,
+  "type": "module",
+  "description": "Finds TinyVault accounts below the close ratio and closes them.",
+  "scripts": { "start": "node keeper.mjs" },
+  "dependencies": { "viem": "2.21.54" }
+}
