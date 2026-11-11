@@ -70,9 +70,10 @@ async function closeOne(account, view, price, closeRatio, musd) {
   for (const l of rc.logs) {
     try {
       const ev = decodeEventLog({ abi: vaultAbi, data: l.data, topics: l.topics })
-      if (ev.eventName !== 'AccountClosed') continue
+      if (ev.eventName !== 'AccountClosed' && ev.eventName !== 'ClosedInRecoveryMode') continue
       const { paid, collSeized: seized, reserveUsed: fromReserve, shared: socialized } = ev.args
       const gain = (seized * price) / 10n ** 18n - paid
+      if (ev.eventName === 'ClosedInRecoveryMode') { log(`  BTC credited to the keeper inside the vault (Recovery Mode)`); continue }
       log(`  closed ${account}: paid ${fmt(paid)} MUSD, received ${fmt(seized, 6)} BTC (worth ${fmt(gain)} MUSD more)` +
         (fromReserve > 0n ? `, reserve covered ${fmt(fromReserve)}` : '') + (socialized > 0n ? `, shared ${fmt(socialized)}` : '') + ` tx ${hash}`)
     } catch {}
@@ -84,13 +85,18 @@ async function tick() {
   await discover()
   const [closeRatio, state, musd] = await Promise.all([read('closeRatio'), read('vaultState'), read('musd')])
   const price = state.price
-  log(`BTC $${fmt(price)} · ${known.size} accounts · close below ${fmt(closeRatio * 100n)}% · Mezo loan at ${fmt(state.ratio * 100n, 0)}%`)
+  const [recovery, shutdownAt, grace] = await Promise.all([
+    read('recoveryMode').catch(() => false), read('shutdownAt').catch(() => 0n), read('WIND_DOWN_GRACE').catch(() => 0n)])
+  const forced = shutdownAt > 0n && BigInt(Math.floor(Date.now() / 1000)) >= shutdownAt + grace
+  log(`BTC $${fmt(price)} · ${known.size} accounts · close below ${fmt(closeRatio * 100n)}% · Mezo loan at ${fmt(state.ratio * 100n, 0)}%` +
+    (recovery ? ' · Mezo in Recovery Mode (closed BTC is credited in the vault)' : '') +
+    (shutdownAt > 0n ? (forced ? ' · winding down: every account still owing can be closed' : ' · winding down') : ''))
   let found = 0
   for (const account of known) {
     const v = await read('accountOf', [account])
     if (v.debt === 0n) continue
     const pct = fmt(v.ratio * 100n, 1)
-    if (v.ratio >= closeRatio) { log(`  ok     ${account} ${pct}%  closes at $${fmt(v.closePrice)}`); continue }
+    if (v.ratio >= closeRatio && !forced) { log(`  ok     ${account} ${pct}%  closes at $${fmt(v.closePrice)}`); continue }
     found++
     log(`  CLOSE  ${account} ${pct}%  owes ${fmt(v.debt)} MUSD`)
     if (!wallet) continue

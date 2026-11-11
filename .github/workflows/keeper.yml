@@ -1,0 +1,38 @@
+name: keeper
+
+# Checks every TinyVault account on Mezo testnet every 15 minutes and closes any below 125%.
+# Without a key it only reports, so the log is a public record of every account's health.
+# To let it close accounts, add a repository secret KEEPER_PRIVATE_KEY for a wallet holding
+# MUSD and a little testnet BTC. The closer earns 5% on each close.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: keeper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Scan and close
+        env:
+          VAULT: ${{ vars.VAULT_ADDRESS }}
+          FROM_BLOCK: ${{ vars.DEPLOY_BLOCK }}
+          PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+        run: |
+          [ -n "$VAULT" ] || unset VAULT
+          [ -n "$FROM_BLOCK" ] || unset FROM_BLOCK
+          [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
+          node keeper.mjs | tee -a "$GITHUB_STEP_SUMMARY"

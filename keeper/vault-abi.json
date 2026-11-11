@@ -1,6 +1,19 @@
 [
  {
   "type": "function",
+  "name": "WIND_DOWN_GRACE",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "accountOf",
   "inputs": [
    {
@@ -129,6 +142,32 @@
     "name": "",
     "type": "address",
     "internalType": "contract IPriceFeed"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "recoveryMode",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "shutdownAt",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
    }
   ],
   "stateMutability": "view"
@@ -265,6 +304,31 @@
    },
    {
     "name": "debt",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ClosedInRecoveryMode",
+  "inputs": [
+   {
+    "name": "account",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "closer",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "collCredited",
     "type": "uint256",
     "indexed": false,
     "internalType": "uint256"
