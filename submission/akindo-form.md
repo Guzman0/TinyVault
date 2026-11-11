@@ -39,14 +39,14 @@ Track 1: DeFi (borrowing with MUSD)
 Mezo testnet (chain 31611)
 
 **Project status**
-Entirely new, built during Wave 1.
+Built during Wave 1, extended in Wave 2 (see wave2-update.md).
 
 **Project readiness**
 Testnet deployment with a live shared Mezo loan.
 
 **Future milestones**
-1. Wave 2, by 15 November 2026: a keeper that closes unhealthy accounts automatically; alerts before an account nears its close line; lower gas with Mezo list hints; interviews with 10 to 15 small holders.
-2. December 2026: external security review; reserve target and fee split; mobile-first app.
+1. Wave 2 (shipped): wind-down that returns every BTC; closing accounts in Mezo Recovery Mode; keeper on a 15-minute schedule; verified source; independent users on testnet.
+2. December 2026: alerts before an account nears its close line; external security review; reserve target and fee split; mobile-first app.
 3. Q1 2027: mainnet with a backed anchor; vaults with different limits; wallet integrations.
 
 **Team info**
@@ -56,5 +56,5 @@ Guzman, solo builder (product, research, build). X: @the_first_guz
 - Live app: https://guzman0.github.io/TinyVault/
 - Code: https://github.com/Guzman0/TinyVault
 - Vault contract: https://explorer.test.mezo.org/address/0x7e98760E75a14e0095A2BE38Ff99D5A231678c11
-- Deck: [deck link]
+- Deck: https://claude.ai/artifact/C5i5tL5QgAt4t3AZ9eRHhD
 - Pitch video: [video link]

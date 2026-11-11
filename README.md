@@ -60,6 +60,12 @@ FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contr
 
 `keeper/` closes accounts that fall below 125%, so the vault does not depend on someone noticing. Anyone can run it; the closer earns 5% on each close. `keeper/fork-demo.sh` shows it closing one account after a 23% BTC drop on a fork of Mezo testnet, with the other accounts untouched. See [keeper/README.md](keeper/README.md).
 
+It runs every 15 minutes on GitHub Actions ([`.github/workflows/keeper.yml`](.github/workflows/keeper.yml)); each run's output is in the workflow summary. With no `KEEPER_PRIVATE_KEY` secret it reports what it would close; with one it sends the closes.
+
+## Who funds the anchor
+
+On testnet, Guzman funds it: 0.05 BTC against Mezo's 1,800 MUSD minimum, at about 186%. On mainnet a backer does the same at 250% or more: Mezo, a partner or a treasury. Its cost is Mezo's interest on about 2,000 MUSD of anchor debt (at today's 1%, about 20 MUSD a year), and it keeps the MUSD it borrowed. The 0.5% fee on each loan covers that after about 4,000 MUSD of loans a year, 40 people borrowing 100 MUSD. Past that, fees fill the reserve and then pay the backer. The wind-down lets the backer exit with all its BTC, and closers earn 5% of each close, so keepers pay for themselves.
+
 ## Security
 
 Slither static analysis was run on the vault; the one real finding (rounding in a view) is fixed and the rest are reviewed in [SECURITY.md](SECURITY.md), with the known limits.
