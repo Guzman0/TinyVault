@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './state'
 import { AccountPanel } from './components/AccountPanel'
 import { VaultPanel } from './components/VaultPanel'
 import { Accounts } from './components/Accounts'
+import { ActivityFeed, StatusBanner } from './components/Status'
 import { explorerAddress } from './lib/chain'
 import { ADDR } from './lib/config'
 import { errorText, fmtMusd, fmtNum, shortAddr, toNum } from './lib/format'
@@ -33,6 +34,7 @@ function Page() {
       </header>
       {err && <div className="notice bad">{err}</div>}
       {loadError && <div className="notice bad">{loadError}</div>}
+      <StatusBanner />
 
       <main>
         <section className="hero">
@@ -57,6 +59,7 @@ function Page() {
 
         <VaultPanel />
         <Accounts />
+        <ActivityFeed />
 
         <section className="fair">
           <h2>How one shared loan stays fair</h2>

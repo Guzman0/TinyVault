@@ -1,6 +1,51 @@
 // Generated from out/TinyVault.sol/TinyVault.json
 export const vaultAbi = [
  {
+  "type": "constructor",
+  "inputs": [
+   {
+    "name": "borrowerOps_",
+    "type": "address",
+    "internalType": "contract IBorrowerOperations"
+   },
+   {
+    "name": "owner_",
+    "type": "address",
+    "internalType": "address"
+   },
+   {
+    "name": "openRatio_",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "closeRatio_",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "closeBonus_",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "minBorrow_",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "reserveFeeBps_",
+    "type": "uint16",
+    "internalType": "uint16"
+   }
+  ],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "receive",
+  "stateMutability": "payable"
+ },
+ {
   "type": "function",
   "name": "MAX_RESERVE_FEE_BPS",
   "inputs": [],
@@ -9,6 +54,19 @@ export const vaultAbi = [
     "name": "",
     "type": "uint16",
     "internalType": "uint16"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "WIND_DOWN_GRACE",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
    }
   ],
   "stateMutability": "view"
@@ -117,6 +175,32 @@ export const vaultAbi = [
  },
  {
   "type": "function",
+  "name": "claimMusd",
+  "inputs": [],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "claimableMusd",
+  "inputs": [
+   {
+    "name": "account",
+    "type": "address",
+    "internalType": "address"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "closeAccount",
   "inputs": [
    {
@@ -163,6 +247,13 @@ export const vaultAbi = [
    }
   ],
   "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "closeTrove",
+  "inputs": [],
+  "outputs": [],
+  "stateMutability": "nonpayable"
  },
  {
   "type": "function",
@@ -262,6 +353,38 @@ export const vaultAbi = [
  },
  {
   "type": "function",
+  "name": "musdClaimed",
+  "inputs": [
+   {
+    "name": "",
+    "type": "address",
+    "internalType": "address"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "musdPerShare",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "openAnchor",
   "inputs": [
    {
@@ -337,6 +460,19 @@ export const vaultAbi = [
  },
  {
   "type": "function",
+  "name": "recoveryMode",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "renounceOwnership",
   "inputs": [],
   "outputs": [],
@@ -403,6 +539,26 @@ export const vaultAbi = [
   ],
   "outputs": [],
   "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "shutdown",
+  "inputs": [],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "shutdownAt",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
  },
  {
   "type": "function",
@@ -565,6 +721,37 @@ export const vaultAbi = [
   "stateMutability": "nonpayable"
  },
  {
+  "type": "function",
+  "name": "withdrawReserve",
+  "inputs": [
+   {
+    "name": "to",
+    "type": "address",
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "woundDown",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
   "type": "event",
   "name": "AccountClosed",
   "inputs": [
@@ -671,7 +858,51 @@ export const vaultAbi = [
  },
  {
   "type": "event",
+  "name": "ClosedInRecoveryMode",
+  "inputs": [
+   {
+    "name": "account",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "closer",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "collCredited",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
   "name": "Deposited",
+  "inputs": [
+   {
+    "name": "account",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "MusdClaimed",
   "inputs": [
    {
     "name": "account",
@@ -798,6 +1029,44 @@ export const vaultAbi = [
  },
  {
   "type": "event",
+  "name": "ReserveWithdrawn",
+  "inputs": [
+   {
+    "name": "to",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "Shutdown",
+  "inputs": [
+   {
+    "name": "at",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "forcedClosesFrom",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
   "name": "VaultClosed",
   "inputs": [
    {
@@ -829,6 +1098,37 @@ export const vaultAbi = [
   "anonymous": false
  },
  {
+  "type": "event",
+  "name": "WoundDown",
+  "inputs": [
+   {
+    "name": "collReturned",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "debtRepaid",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "fromReserve",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "fromCaller",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
   "type": "error",
   "name": "AlreadyOpen",
   "inputs": []
@@ -841,6 +1141,11 @@ export const vaultAbi = [
  {
   "type": "error",
   "name": "BelowMinBorrow",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "DebtOutstanding",
   "inputs": []
  },
  {
@@ -865,12 +1170,27 @@ export const vaultAbi = [
  },
  {
   "type": "error",
+  "name": "IsShutdown",
+  "inputs": []
+ },
+ {
+  "type": "error",
   "name": "NoDebt",
   "inputs": []
  },
  {
   "type": "error",
   "name": "NotOpen",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "NotShutdown",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "NothingToClaim",
   "inputs": []
  },
  {
@@ -894,6 +1214,11 @@ export const vaultAbi = [
     "internalType": "address"
    }
   ]
+ },
+ {
+  "type": "error",
+  "name": "RecoveryMode",
+  "inputs": []
  },
  {
   "type": "error",

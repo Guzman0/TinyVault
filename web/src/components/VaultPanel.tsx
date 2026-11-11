@@ -3,6 +3,7 @@ import { explorerAddress } from '../lib/chain'
 import { ADDR } from '../lib/config'
 import { fmtBtc, fmtMusd, fmtRatio, fmtUsd, toNum } from '../lib/format'
 import { Stat } from './ui'
+import { WindDown } from './Status'
 
 export function VaultPanel() {
   const { vault } = useApp()
@@ -20,13 +21,14 @@ export function VaultPanel() {
       <div className="stats four">
         <Stat k="BTC in the loan" v={fmtBtc(vault.troveColl)} sub={`Worth ${fmtUsd(toNum(vault.troveColl * vault.price / ONE))}`} />
         <Stat k="Owed to Mezo" v={fmtMusd(vault.troveDebt, 0)} sub="Includes Mezo's 200 MUSD gas deposit" />
-        <Stat k="Ratio Mezo sees" v={fmtRatio(vault.ratio)} sub="Mezo's line is 110%" />
+        <Stat k="Ratio Mezo sees" v={vault.closed ? 'Closed' : fmtRatio(vault.ratio)} sub="Mezo's line is 110%" />
         <Stat k="Reserve" v={fmtMusd(vault.reserve)} sub="Pays first if an account falls short" />
       </div>
       <p className="footnote">
         BTC {fmtUsd(toNum(vault.price))} from Mezo's price feed. Mezo's minimum loan is {fmtMusd(vault.minNetDebt, 0)}, read live from its contract.
         {vault.idle > 0n && ` ${fmtMusd(vault.idle)} of repayments is held against the loan and lent out again first.`}
       </p>
+      <WindDown />
     </section>
   )
 }

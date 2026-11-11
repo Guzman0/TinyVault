@@ -21,7 +21,8 @@ export function Accounts() {
         <div className="tr th"><span>Account</span><span>BTC</span><span>Owes</span><span>Health</span><span /></div>
         {loading && rows.length === 0 && <div className="empty">Reading accounts from Mezo testnet</div>}
         {rows.map((a) => {
-          const closable = a.debt > 0n && a.ratio < params.closeRatio
+          const forced = vault.forcedFrom > 0n && BigInt(Math.floor(Date.now() / 1000)) >= vault.forcedFrom
+          const closable = !vault.closed && a.debt > 0n && (a.ratio < params.closeRatio || forced)
           return (
             <div className="tr" key={a.address}>
               <span>

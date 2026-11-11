@@ -165,3 +165,17 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 @media (prefers-reduced-motion: reduce) {
   .gauge-dot, .btn { transition: none; }
 }
+
+/* Wave 2: status, wind-down, claim, activity */
+.notice.warn{background:#FFF4E0;border-color:#F2C98B;color:#7A4A00}
+.notice.good{background:#E8F4EC;border-color:#B8DCC4;color:#1E5C3A}
+.winddown{margin-top:18px;padding-top:16px;border-top:1px solid var(--line, #E4DACB)}
+.winddown h3{margin:0 0 6px;font-size:16px}
+.claim{margin:12px 0;padding:12px 14px;border-radius:12px;background:#E8F4EC}
+.claim p{margin:0 0 6px}
+.feed{display:flex;flex-direction:column}
+.feed-row{display:grid;grid-template-columns:12px 110px 1fr auto;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line, #E4DACB);color:inherit;text-decoration:none}
+.feed-row:hover{background:rgba(0,0,0,.03)}
+.feed-row .dot{width:10px;height:10px;border-radius:50%;background:#9C9282}
+.dot.k-borrow,.dot.k-open{background:#F7931A}.dot.k-repay,.dot.k-wound,.dot.k-claim{background:#2F8F5B}.dot.k-close,.dot.k-shutdown{background:#C24A33}.dot.k-redeem,.dot.k-redistribute{background:#5B7FB5}
+@media (max-width:640px){.feed-row{grid-template-columns:12px 1fr;}.feed-row>span:nth-child(3){grid-column:2}.feed-row>span:nth-child(4){display:none}}

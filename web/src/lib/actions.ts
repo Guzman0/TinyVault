@@ -36,6 +36,18 @@ export async function repay(w: WalletClient, a: Address, amount: bigint, step: S
 export const withdraw = (w: WalletClient, a: Address, amount: bigint, step: Step) =>
   send(w, a, step, 'withdraw BTC', { ...v, functionName: 'withdraw', args: [amount, ZERO, ZERO] } as never)
 
+export const claimMusd = (w: WalletClient, a: Address, step: Step) =>
+  send(w, a, step, 'claim MUSD', { ...v, functionName: 'claimMusd', args: [] } as never)
+
+export const shutdown = (w: WalletClient, a: Address, step: Step) =>
+  send(w, a, step, 'shut the vault to new loans', { ...v, functionName: 'shutdown', args: [] } as never)
+
+/** Anyone can close the Mezo loan once nobody owes; the caller may top up a few wei of interest. */
+export async function closeTrove(w: WalletClient, a: Address, step: Step) {
+  await ensureAllowance(w, a, 10n ** 18n, step)
+  return send(w, a, step, "close the vault's Mezo loan", { ...v, functionName: 'closeTrove', args: [] } as never)
+}
+
 export async function closeAccount(w: WalletClient, a: Address, target: Address, debt: bigint, step: Step) {
   await ensureAllowance(w, a, debt + debt / 100n, step)
   return send(w, a, step, 'close the account', { ...v, functionName: 'closeAccount', args: [target, ZERO, ZERO] } as never)
