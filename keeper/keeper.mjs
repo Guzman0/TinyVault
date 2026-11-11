@@ -22,8 +22,8 @@ const erc20Abi = [
 ]
 
 const RPC = process.env.RPC || 'https://rpc.test.mezo.org'
-const VAULT = process.env.VAULT || '0x8724a13AfAF230311AC0f69e5979f42058EF248b'
-const FROM_BLOCK = BigInt(process.env.FROM_BLOCK || 16325664)
+const VAULT = process.env.VAULT || '0x7e98760E75a14e0095A2BE38Ff99D5A231678c11'
+const FROM_BLOCK = BigInt(process.env.FROM_BLOCK || 16719053)
 const INTERVAL = process.env.INTERVAL ? Number(process.env.INTERVAL) : 0
 const MAX_PAY = process.env.MAX_PAY ? parseUnits(process.env.MAX_PAY, 18) : null
 const STEP = 10_000n // Mezo's RPC answers log queries over at most 10,000 blocks

@@ -28,11 +28,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Scan and close
         env:
-          VAULT: ${{ vars.VAULT_ADDRESS }}
-          FROM_BLOCK: ${{ vars.DEPLOY_BLOCK }}
           PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
         run: |
-          [ -n "$VAULT" ] || unset VAULT
-          [ -n "$FROM_BLOCK" ] || unset FROM_BLOCK
           [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
           node keeper.mjs | tee -a "$GITHUB_STEP_SUMMARY"

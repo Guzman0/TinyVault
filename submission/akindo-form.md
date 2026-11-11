@@ -55,6 +55,6 @@ Guzman, solo builder (product, research, build). X: @the_first_guz
 **Links**
 - Live app: https://guzman0.github.io/TinyVault/
 - Code: https://github.com/Guzman0/TinyVault
-- Vault contract: https://explorer.test.mezo.org/address/0x8724a13AfAF230311AC0f69e5979f42058EF248b
+- Vault contract: https://explorer.test.mezo.org/address/0x7e98760E75a14e0095A2BE38Ff99D5A231678c11
 - Deck: [deck link]
 - Pitch video: [video link]

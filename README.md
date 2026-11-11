@@ -7,7 +7,8 @@ Mezo's smallest loan is **1,800 MUSD** of debt, plus a 200 MUSD gas deposit, so 
 TinyVault opens one Mezo loan for many people and keeps the ledger. Anyone can borrow from **10 MUSD**.
 
 - Live app: https://guzman0.github.io/TinyVault/
-- Vault (Mezo testnet): [`0x8724a13AfAF230311AC0f69e5979f42058EF248b`](https://explorer.test.mezo.org/address/0x8724a13AfAF230311AC0f69e5979f42058EF248b)
+- Vault (Mezo testnet, source verified): [`0x7e98760E75a14e0095A2BE38Ff99D5A231678c11`](https://explorer.test.mezo.org/address/0x7e98760E75a14e0095A2BE38Ff99D5A231678c11)
+- Track: Track 1, DeFi
 
 ## How it works
 
