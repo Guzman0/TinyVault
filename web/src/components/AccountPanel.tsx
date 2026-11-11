@@ -3,6 +3,7 @@ import { useApp } from '../state'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
+import { CloseAlert, NotifyToggle } from './CloseAlert'
 
 type Tab = 'deposit' | 'borrow' | 'repay' | 'withdraw'
 const ONE = 10n ** 18n
@@ -12,6 +13,7 @@ export function AccountPanel() {
   const [tab, setTab] = useState<Tab>('deposit')
   const [amount, setAmount] = useState('')
   const [err, setErr] = useState('')
+  const [firstDone, setFirstDone] = useState('')
 
   if (!account || !wallet) {
     return (
@@ -45,11 +47,21 @@ export function AccountPanel() {
           : <Stat k="You can borrow" v={fmtMusd(me.maxBorrow)} sub="Before fees, at the 150% limit" />}
       </div>
 
+      {firstDone && <div className="notice good">{firstDone}</div>}
+      <CloseAlert m={me} p={params} v={vault} onFix={(t, amt) => { setTab(t); setAmount(trim(amt)) }} />
+      <NotifyToggle account={account} m={me} p={params} />
+
       {me.claimable > 0n && (
         <div className="claim">
           <p><strong>{fmtMusd(me.claimable)}</strong> of the MUSD the vault was holding is yours.</p>
           <TxButton label="Claim MUSD" done="Claimed." run={(s) => claimMusd(wallet, account, s)} />
         </div>
+      )}
+      {me.coll === 0n && me.debt === 0n && !vault.closed && vault.shutdownAt === 0n && (
+        <>
+          <FirstLoan onDone={setFirstDone} />
+          <p className="or">or step by step</p>
+        </>
       )}
       <div className="tabs" role="tablist">
         {(['deposit', 'borrow', 'repay', 'withdraw'] as Tab[]).map((t) => (
@@ -59,6 +71,71 @@ export function AccountPanel() {
         ))}
       </div>
       <ActionForm tab={tab} amount={amount} setAmount={setAmount} />
+    </div>
+  )
+}
+
+const PRESETS = ['20', '50', '100']
+const FIRST_RATIO = 2n * ONE // a first loan starts well above the 150% limit, so BTC can fall 37% before 125%
+
+/** A first loan in one go: pick how much MUSD, the app works out the BTC and sends both steps. */
+function FirstLoan({ onDone }: { onDone: (s: string) => void }) {
+  const { account, wallet, params, vault, balances } = useApp()
+  const [amount, setAmount] = useState('50')
+  const p = params!, v = vault!, b = balances!
+  const wei = toWei(amount)
+
+  const plan = useMemo(() => {
+    if (!wei) return null
+    const reserveFee = wei * BigInt(p.reserveFeeBps) / 10_000n
+    const mezoFee = (wei + reserveFee) * p.mezoFeeRate / ONE
+    const debt = wei + reserveFee + mezoFee
+    const raw = (debt * FIRST_RATIO + v.price - 1n) / v.price
+    const coll = ((raw + 10n ** 12n - 1n) / 10n ** 12n) * 10n ** 12n // round up to 0.000001 BTC
+    const closeAt = toNum(debt * p.closeRatio / coll)
+    const need = wei + reserveFee
+    return { debt, fees: reserveFee + mezoFee, coll, closeAt, fall: 1 - closeAt / toNum(v.price), fromTrove: need > v.idle ? need - v.idle : 0n }
+  }, [wei, p, v])
+
+  const tooLow = wei !== null && wei < p.minBorrow
+  const short = plan !== null && b.btc < plan.coll + 10n ** 15n // keep a little BTC for gas
+
+  return (
+    <div className="first">
+      <h3>Your first loan, in one step</h3>
+      <div className="presets" role="group" aria-label="How much MUSD">
+        {PRESETS.map((x) => <button key={x} className="chip" aria-pressed={amount === x} onClick={() => setAmount(x)}>{x} MUSD</button>)}
+      </div>
+      <label className="field">
+        <span>MUSD to borrow</span>
+        <div className="input-row">
+          <input inputMode="decimal" placeholder="50" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <span className="unit">MUSD</span>
+        </div>
+      </label>
+      {plan && !tooLow && (
+        <div className="summary">
+          <Row k="You add" v={`${fmtBtc(plan.coll)} (${fmtUsd(toNum(plan.coll * v.price / ONE))})`} />
+          <Row k="You get" v={fmtMusd(wei!)} />
+          <Row k="You will owe" v={`${fmtMusd(plan.debt)} (fees ${fmtMusd(plan.fees, 2)})`} />
+          <Row k="Closes if BTC falls to" v={`${fmtUsd(plan.closeAt)}, ${Math.round(plan.fall * 100)}% below today`} />
+        </div>
+      )}
+      {tooLow && <p className="bad">The smallest loan is {fmtNum(toNum(p.minBorrow), 0)} MUSD.</p>}
+      {short && <p className="bad">That needs {fmtBtc(plan!.coll)} plus a little for gas; your wallet has {fmtBtc(b.btc)}. <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Get testnet BTC</a></p>}
+      <TxButton
+        label={plan && !tooLow ? `Add ${fmtBtc(plan.coll)} and borrow ${amount} MUSD` : 'Enter an amount'}
+        disabled={!plan || tooLow || short}
+        done="Borrowed. The MUSD is in your wallet."
+        run={async (step) => {
+          if (!plan || !wei || !account || !wallet) throw new Error('Enter an amount.')
+          await deposit(wallet, account, plan.coll, (s) => step(`Step 1 of 2. ${s}`))
+          const h = await borrow(wallet, account, wei, plan.fromTrove, (s) => step(`Step 2 of 2. ${s}`))
+          onDone(`Borrowed ${amount} MUSD. It is in your wallet. Repay any time to take your BTC back.`)
+          return h
+        }}
+      />
+      <small className="muted">Two confirmations in your wallet: one to add the BTC, one to borrow.</small>
     </div>
   )
 }
@@ -106,8 +183,11 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
   const run = (step: (s: string) => void) => {
     if (!wei || !account || !wallet) throw new Error('Enter an amount.')
     if (tab === 'deposit') return deposit(wallet, account, wei, step)
-    if (tab === 'borrow') return borrow(wallet, account, wei, step)
-    if (tab === 'repay') return repay(wallet, account, wei >= m.debt ? 2n ** 255n : wei, step)
+    if (tab === 'borrow') {
+      const need = wei + wei * BigInt(p.reserveFeeBps) / 10_000n
+      return borrow(wallet, account, wei, need > v.idle ? need - v.idle : 0n, step)
+    }
+    if (tab === 'repay') return repay(wallet, account, wei >= m.debt ? 2n ** 255n : wei, m.debt, step)
     return withdraw(wallet, account, wei, step)
   }
 

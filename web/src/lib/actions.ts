@@ -1,6 +1,7 @@
 import { erc20Abi, maxUint256, type Address, type WalletClient } from 'viem'
 import { publicClient, waitFor } from './chain'
-import { ADDR, ZERO, mezoTestnet } from './config'
+import { ADDR, mezoTestnet } from './config'
+import { hintsFor } from './hints'
 import { vaultAbi } from './vaultAbi'
 
 type Step = (s: string) => void
@@ -22,19 +23,27 @@ async function ensureAllowance(wallet: WalletClient, account: Address, amount: b
   } as never)
 }
 
-export const deposit = (w: WalletClient, a: Address, value: bigint, step: Step) =>
-  send(w, a, step, 'deposit BTC', { ...v, functionName: 'deposit', args: [ZERO, ZERO], value } as never)
-
-export const borrow = (w: WalletClient, a: Address, amount: bigint, step: Step) =>
-  send(w, a, step, 'borrow MUSD', { ...v, functionName: 'borrow', args: [amount, ZERO, ZERO] } as never)
-
-export async function repay(w: WalletClient, a: Address, amount: bigint, step: Step) {
-  await ensureAllowance(w, a, amount, step)
-  return send(w, a, step, 'repay', { ...v, functionName: 'repay', args: [amount, ZERO, ZERO] } as never)
+export async function deposit(w: WalletClient, a: Address, value: bigint, step: Step) {
+  const [up, low] = await hintsFor(value, 0n)
+  return send(w, a, step, 'deposit BTC', { ...v, functionName: 'deposit', args: [up, low], value } as never)
 }
 
-export const withdraw = (w: WalletClient, a: Address, amount: bigint, step: Step) =>
-  send(w, a, step, 'withdraw BTC', { ...v, functionName: 'withdraw', args: [amount, ZERO, ZERO] } as never)
+/** `fromTrove`: the part Mezo lends (the rest comes from MUSD the vault already holds). */
+export async function borrow(w: WalletClient, a: Address, amount: bigint, fromTrove: bigint, step: Step) {
+  const [up, low] = await hintsFor(0n, fromTrove + fromTrove / 1000n) // plus Mezo's 0.1% fee
+  return send(w, a, step, 'borrow MUSD', { ...v, functionName: 'borrow', args: [amount, up, low] } as never)
+}
+
+export async function repay(w: WalletClient, a: Address, amount: bigint, debt: bigint, step: Step) {
+  await ensureAllowance(w, a, amount > debt ? debt + debt / 100n : amount, step)
+  const [up, low] = await hintsFor(0n, -(amount > debt ? debt : amount))
+  return send(w, a, step, 'repay', { ...v, functionName: 'repay', args: [amount, up, low] } as never)
+}
+
+export async function withdraw(w: WalletClient, a: Address, amount: bigint, step: Step) {
+  const [up, low] = await hintsFor(-amount, 0n)
+  return send(w, a, step, 'withdraw BTC', { ...v, functionName: 'withdraw', args: [amount, up, low] } as never)
+}
 
 export const claimMusd = (w: WalletClient, a: Address, step: Step) =>
   send(w, a, step, 'claim MUSD', { ...v, functionName: 'claimMusd', args: [] } as never)
@@ -48,7 +57,9 @@ export async function closeTrove(w: WalletClient, a: Address, step: Step) {
   return send(w, a, step, "close the vault's Mezo loan", { ...v, functionName: 'closeTrove', args: [] } as never)
 }
 
-export async function closeAccount(w: WalletClient, a: Address, target: Address, debt: bigint, step: Step) {
+/** `seize`: the BTC the closer is expected to receive (debt plus the bonus, at today's price). */
+export async function closeAccount(w: WalletClient, a: Address, target: Address, debt: bigint, seize: bigint, step: Step) {
   await ensureAllowance(w, a, debt + debt / 100n, step)
-  return send(w, a, step, 'close the account', { ...v, functionName: 'closeAccount', args: [target, ZERO, ZERO] } as never)
+  const [up, low] = await hintsFor(-seize, -debt)
+  return send(w, a, step, 'close the account', { ...v, functionName: 'closeAccount', args: [target, up, low] } as never)
 }

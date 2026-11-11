@@ -43,7 +43,8 @@ export function TxButton({ label, run, disabled, done }: {
 
 const LO = 1.0
 const HI = 3.0
-const pos = (r: number) => `${((Math.min(Math.max(r, LO), HI) - LO) / (HI - LO)) * 100}%`
+// 2% to 98% of the track, so the dot never sticks out past either end
+const pos = (r: number) => `${2 + ((Math.min(Math.max(r, LO), HI) - LO) / (HI - LO)) * 96}%`
 
 /** Health of one account: where its ratio sits against the close line and the borrow limit. */
 export function Gauge({ ratio, closeRatio, openRatio, compact = false }: { ratio: bigint; closeRatio: bigint; openRatio: bigint; compact?: boolean }) {

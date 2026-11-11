@@ -39,7 +39,7 @@ export function Accounts() {
               <span>
                 {closable ? (
                   account && wallet ? (
-                    <TxButton label={`Close (pay ${fmtMusd(a.debt, 0)})`} done="Closed." run={(s) => closeAccount(wallet, account, a.address, a.debt, s)} />
+                    <TxButton label={`Close (pay ${fmtMusd(a.debt, 0)})`} done="Closed." run={(s) => closeAccount(wallet, account, a.address, a.debt, seizeOf(a.coll, a.debt, params.closeBonus, vault.price), s)} />
                   ) : <span className="pill bad">Can be closed</span>
                 ) : (
                   <span className="muted small">{a.debt > 0n ? `Closes at ${fmtUsd(toNum(a.closePrice))}` : 'No loan'}</span>
@@ -51,4 +51,10 @@ export function Accounts() {
       </div>
     </section>
   )
+}
+
+/** BTC a closer receives: the debt plus the bonus at today's price, capped at the account's BTC. */
+function seizeOf(coll: bigint, debt: bigint, bonus: bigint, price: bigint) {
+  const s = (debt * (10n ** 18n + bonus)) / price
+  return s > coll ? coll : s
 }

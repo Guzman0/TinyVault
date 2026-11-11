@@ -56,6 +56,13 @@ FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contr
 
 8 tests against **Mezo's real MUSD contracts** on a fork of testnet: opening the shared trove, winding the vault down and closing its real trove so every BTC comes back, closing an account in Mezo's real Recovery Mode, a $100 loan against $300 of BTC, the per-account limit, closing one account after a 20% price drop while another is untouched, growing past the trove's opening capacity, and a real Mezo redemption run through every riskier trove on testnet into the vault, split by debt within 0.2%. Mezo's price feed reads a chain precompile that a forked EVM cannot run, so the tests read the live price from the network and serve it to the fork.
 
+## In the app
+
+- **First loan in one step.** Pick an amount of MUSD; the app works out the BTC for a 200% start (BTC can fall 37% before the 125% close line) and sends the deposit and the loan one after the other.
+- **Close-line alerts.** Below 140% the account shows a warning with the BTC price it closes at and two one-tap fixes: the MUSD to repay or the BTC to add to get back to 150%. Browser notifications can be switched on; they fire while the page is open, since the app re-reads the vault every minute. The keeper's public log also marks these accounts as `NEAR`.
+- **Lower gas with Mezo's sorted-list hints.** Every change to the shared trove makes Mezo re-sort it among all troves. The app and the keeper read the right position from Mezo's `SortedTroves` first and pass it as hints. On testnet's 359 troves this cuts a deposit from 1.81M to 0.43M gas and a withdrawal from 2.14M to 0.47M, about 76% less.
+- Works at phone width.
+
 ## Keeper
 
 `keeper/` closes accounts that fall below 125%, so the vault does not depend on someone noticing. Anyone can run it; the closer earns 5% on each close. `keeper/fork-demo.sh` shows it closing one account after a 23% BTC drop on a fork of Mezo testnet, with the other accounts untouched. See [keeper/README.md](keeper/README.md).

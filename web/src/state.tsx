@@ -61,6 +61,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [account])
 
   useEffect(() => { refresh() }, [refresh])
+  // Re-read every minute so prices, ratios and alerts stay current while the page is open.
+  useEffect(() => {
+    const id = setInterval(() => { if (document.visibilityState === 'visible' || account) refresh() }, 60_000)
+    return () => clearInterval(id)
+  }, [refresh, account])
 
   useEffect(() => {
     existingAccount().then((r) => { if (r) { setAccount(r.account); setWallet(r.wallet) } }).catch(() => {})
