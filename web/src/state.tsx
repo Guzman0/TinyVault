@@ -45,14 +45,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     setLoadError(null)
     try {
-      const [p, v, list, act] = await Promise.all([loadParams(), loadVault(), loadAccounts(), loadActivity().catch(() => [])])
-      setParams(p); setVault(v); setAccounts(list); setActivity(act)
-      if (account) {
-        const [m, b] = await Promise.all([loadAccount(account), loadWallet(account)])
-        setMe(m); setBalances(b)
-      } else {
-        setMe(null); setBalances(null)
-      }
+      // The account and the vault come first; the event history can take a while on a long chain.
+      const history = Promise.all([loadAccounts(), loadActivity().catch(() => [])])
+      const [p, v, m, b] = await Promise.all([
+        loadParams(), loadVault(),
+        account ? loadAccount(account) : Promise.resolve(null),
+        account ? loadWallet(account) : Promise.resolve(null),
+      ])
+      setParams(p); setVault(v); setMe(m); setBalances(b)
+      setLoading(false)
+      const [list, act] = await history
+      setAccounts(list); setActivity(act)
     } catch (e) {
       setLoadError(`Could not read the vault from Mezo testnet: ${errorText(e)}`)
     } finally {

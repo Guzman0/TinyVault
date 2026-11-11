@@ -4,13 +4,14 @@ import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
 import { CloseAlert, NotifyToggle } from './CloseAlert'
+import { OTHER_VAULT } from '../lib/config'
 
 type Tab = 'deposit' | 'borrow' | 'repay' | 'withdraw'
 const ONE = 10n ** 18n
 
 export function AccountPanel() {
   const { account, wallet, connect, me, params, vault, balances } = useApp()
-  const [tab, setTab] = useState<Tab>('deposit')
+  const [tab, setTab] = useState<Tab>(OTHER_VAULT ? 'repay' : 'deposit')
   const [amount, setAmount] = useState('')
   const [err, setErr] = useState('')
   const [firstDone, setFirstDone] = useState('')
@@ -42,8 +43,8 @@ export function AccountPanel() {
       <div className="stats">
         <Stat k="BTC in the vault" v={fmtBtc(me.coll)} sub={`Worth ${fmtUsd(valueUsd)}`} />
         <Stat k="You owe" v={fmtMusd(me.debt)} sub={hasDebt ? `Closes if BTC falls to ${fmtUsd(toNum(me.closePrice))}` : 'No loan yet'} />
-        {vault.closed || vault.shutdownAt > 0n
-          ? <Stat k="You can borrow" v="0 MUSD" sub={vault.closed ? 'The vault is closed' : 'The vault is winding down'} />
+        {vault.closed || vault.shutdownAt > 0n || OTHER_VAULT
+          ? <Stat k="You can borrow" v="0 MUSD" sub={OTHER_VAULT ? 'Old vault: repay and withdraw only' : vault.closed ? 'The vault is closed' : 'The vault is winding down'} />
           : <Stat k="You can borrow" v={fmtMusd(me.maxBorrow)} sub="Before fees, at the 150% limit" />}
       </div>
 
@@ -57,7 +58,7 @@ export function AccountPanel() {
           <TxButton label="Claim MUSD" done="Claimed." run={(s) => claimMusd(wallet, account, s)} />
         </div>
       )}
-      {me.coll === 0n && me.debt === 0n && !vault.closed && vault.shutdownAt === 0n && (
+      {me.coll === 0n && me.debt === 0n && !vault.closed && vault.shutdownAt === 0n && !OTHER_VAULT && (
         <>
           <FirstLoan onDone={setFirstDone} />
           <p className="or">or step by step</p>
@@ -175,7 +176,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
   }, [tab, b, m, p, price])
 
   const tooLow = tab === 'borrow' && wei !== null && wei < p.minBorrow
-  const stopped = (tab === 'deposit' || tab === 'borrow') && (v.shutdownAt > 0n || v.closed)
+  const stopped = (tab === 'deposit' || tab === 'borrow') && (v.shutdownAt > 0n || v.closed || OTHER_VAULT)
   const paused = tab === 'withdraw' && v.recoveryMode && !v.closed
   const noRepay = tab === 'repay' && v.closed
   const unsafe = preview.ratio !== null && preview.ratio < toNum(p.openRatio) && (tab === 'borrow' || tab === 'withdraw')
@@ -219,7 +220,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
       )}
       {tooLow && <p className="bad">The smallest loan is {fmtNum(toNum(p.minBorrow), 0)} MUSD.</p>}
       {unsafe && <p className="bad">That goes below the 150% limit.</p>}
-      {stopped && <p className="bad">The vault is {v.closed ? 'closed' : 'winding down'}: no new deposits or loans.</p>}
+      {stopped && <p className="bad">{OTHER_VAULT ? 'This is an old vault: repay and withdraw only.' : `The vault is ${v.closed ? 'closed' : 'winding down'}: no new deposits or loans.`}</p>}
       {paused && <p className="bad">Mezo is in Recovery Mode and pauses BTC withdrawals until it recovers.</p>}
       {noRepay && <p className="muted">The vault's Mezo loan is closed, so there is nothing to repay.</p>}
       <TxButton

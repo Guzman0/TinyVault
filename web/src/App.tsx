@@ -5,7 +5,7 @@ import { VaultPanel } from './components/VaultPanel'
 import { Accounts } from './components/Accounts'
 import { ActivityFeed, StatusBanner } from './components/Status'
 import { explorerAddress } from './lib/chain'
-import { ADDR } from './lib/config'
+import { ADDR, OTHER_VAULT, WAVE1_VAULT } from './lib/config'
 import { errorText, fmtMusd, fmtNum, shortAddr, toNum } from './lib/format'
 
 export default function App() {
@@ -34,6 +34,11 @@ function Page() {
       </header>
       {err && <div className="notice bad">{err}</div>}
       {loadError && <div className="notice bad">{loadError}</div>}
+      {OTHER_VAULT && (
+        <div className="notice warn">
+          You are looking at {ADDR.vault.toLowerCase() === WAVE1_VAULT.toLowerCase() ? 'the Wave 1 vault' : 'another vault'}, {ADDR.vault.slice(0, 6)}…{ADDR.vault.slice(-4)}. It has no wind-down, so repay and withdraw here, then use the <a href={import.meta.env.BASE_URL}>current vault</a>.
+        </div>
+      )}
       <StatusBanner />
 
       <main>
