@@ -47,13 +47,13 @@ Mezo sees one loan with one ratio. The hard part is making sure one person's bad
 forge test --no-match-contract Fork
 ```
 
-29 unit tests (including fuzz tests that the ledger always adds up to the trove) against a stand-in for Mezo that follows its rules: 1,800 MUSD minimum, 200 MUSD gas deposit, 0.1% borrowing fee, fixed capacity and refinance, redemptions, redistributions and liquidation.
+41 unit tests (including fuzz tests that the ledger always adds up to the trove) against a stand-in for Mezo that follows its rules: 1,800 MUSD minimum, 200 MUSD gas deposit, 0.1% borrowing fee, fixed capacity and refinance, redemptions, redistributions and liquidation.
 
 ```
 FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contract Fork -vv
 ```
 
-6 tests against **Mezo's real MUSD contracts** on a fork of testnet: opening the shared trove, a $100 loan against $300 of BTC, the per-account limit, closing one account after a 20% price drop while another is untouched, growing past the trove's opening capacity, and a real Mezo redemption run through every riskier trove on testnet into the vault, split by debt within 0.2%. Mezo's price feed reads a chain precompile that a forked EVM cannot run, so the tests read the live price from the network and serve it to the fork.
+8 tests against **Mezo's real MUSD contracts** on a fork of testnet: opening the shared trove, winding the vault down and closing its real trove so every BTC comes back, closing an account in Mezo's real Recovery Mode, a $100 loan against $300 of BTC, the per-account limit, closing one account after a 20% price drop while another is untouched, growing past the trove's opening capacity, and a real Mezo redemption run through every riskier trove on testnet into the vault, split by debt within 0.2%. Mezo's price feed reads a chain precompile that a forked EVM cannot run, so the tests read the live price from the network and serve it to the fork.
 
 ## Keeper
 
@@ -73,4 +73,4 @@ npm run dev
 
 ## Limits
 
-Testnet only and not audited. The vault's parameters are fixed at deployment (150% to borrow, 125% to close, 5% bonus, 10 MUSD minimum); only the reserve fee is adjustable, capped at 2%. A Mezo `refinance` resets the trove's interest rate to Mezo's current rate for everyone in the vault. If Mezo liquidates the whole trove (its ratio below 110%), the loss falls on the accounts with debt; the per-account close line exists to keep the trove far from that.
+Testnet only and not audited. The owner can shut the vault down: no new deposits or loans, everyone repays and withdraws, accounts still owing can be closed after 7 days, then anyone closes the Mezo trove and all BTC comes back (see [SECURITY.md](SECURITY.md)). In Mezo Recovery Mode, withdrawals pause, but weak accounts can still be closed. The vault's parameters are fixed at deployment (150% to borrow, 125% to close, 5% bonus, 10 MUSD minimum); only the reserve fee is adjustable, capped at 2%. A Mezo `refinance` resets the trove's interest rate to Mezo's current rate for everyone in the vault. If Mezo liquidates the whole trove (its ratio below 110%), the loss falls on the accounts with debt; the per-account close line exists to keep the trove far from that.

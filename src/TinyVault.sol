@@ -31,6 +31,17 @@ import {IBorrowerOperations, ITroveManager, IPriceFeed} from "./interfaces/IMezo
 ///
 /// The trove is opened by an "anchor" who borrows Mezo's minimum. The anchor is an ordinary
 /// account in the ledger that also carries the trove's 200 MUSD gas deposit.
+///
+/// Winding down: the owner can shut the vault to new deposits and loans. Accounts keep repaying
+/// and withdrawing; after a grace period any account that still owes can be closed. Once nobody
+/// owes, anyone can close the Mezo trove, and every account takes its BTC out of the vault.
+///
+/// Mezo Recovery Mode (system below 150%) blocks BTC withdrawals from troves. Repayments still
+/// work, so accounts can still be closed: the closer's BTC is credited to it inside the vault and
+/// can be withdrawn when Recovery Mode ends.
+///
+/// If Mezo closes the trove itself (a full redemption or a liquidation), the MUSD the vault held
+/// (idle and reserve) is shared among the accounts by debt, as the BTC losses were.
 contract TinyVault is ReentrancyGuard, Ownable2Step {
     using SafeERC20 for IERC20;
 
@@ -40,6 +51,8 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
     uint16 public constant MAX_RESERVE_FEE_BPS = 200; // 2%
     /// Shares held by nobody, so the share supply never reaches zero while debt remains.
     uint256 private constant DEAD_SHARES = 1e3;
+    /// Notice given to borrowers between a shutdown and forced closes.
+    uint256 public constant WIND_DOWN_GRACE = 7 days;
 
     IBorrowerOperations public immutable borrowerOps;
     ITroveManager public immutable troveManager;
@@ -69,7 +82,11 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
     uint256 public idle; // MUSD held against debt that could not be repaid to the trove yet
     uint256 public reserve; // MUSD held to cover shortfalls
     address public anchor;
-    bool public closed; // the trove was closed by Mezo (full redemption or liquidation)
+    bool public closed; // the trove is gone: closed by Mezo, or wound down by the vault
+    bool public woundDown; // the vault repaid and closed its own trove
+    uint256 public shutdownAt; // when the owner shut the vault to new deposits and loans (0 = open)
+    uint256 public musdPerShare; // MUSD per debt share left for accounts after Mezo closed the trove (x1e36)
+    mapping(address => bool) public musdClaimed;
 
     event AnchorOpened(address indexed anchor, uint256 coll, uint256 debt);
     event Deposited(address indexed account, uint256 amount);
@@ -89,6 +106,11 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
     event Redistributed(uint256 collAdded, uint256 debtShares);
     event VaultClosed(uint256 surplus);
     event ReserveFeeUpdated(uint16 bps);
+    event Shutdown(uint256 at, uint256 forcedClosesFrom);
+    event WoundDown(uint256 collReturned, uint256 debtRepaid, uint256 fromReserve, uint256 fromCaller);
+    event MusdClaimed(address indexed account, uint256 amount);
+    event ReserveWithdrawn(address indexed to, uint256 amount);
+    event ClosedInRecoveryMode(address indexed account, address indexed closer, uint256 collCredited);
 
     error NotOpen();
     error AlreadyOpen();
@@ -102,6 +124,11 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
     error FeeTooHigh();
     error TransferFailed();
     error BadParams();
+    error IsShutdown();
+    error NotShutdown();
+    error DebtOutstanding();
+    error RecoveryMode();
+    error NothingToClaim();
 
     constructor(
         IBorrowerOperations borrowerOps_,
@@ -166,6 +193,7 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         _sync();
         if (anchor == address(0)) revert NotOpen();
         if (closed) revert IsClosed();
+        if (shutdownAt != 0) revert IsShutdown();
         _settle(msg.sender);
         borrowerOps.addColl{value: msg.value}(upperHint, lowerHint);
         _accounts[msg.sender].coll += msg.value;
@@ -177,8 +205,10 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         _sync();
         if (anchor == address(0)) revert NotOpen();
         if (closed) revert IsClosed();
+        if (shutdownAt != 0) revert IsShutdown();
         if (amount < minBorrow) revert BelowMinBorrow();
         _settle(msg.sender);
+        uint256 price = priceFeed.fetchPrice();
 
         uint256 fee = (amount * reserveFeeBps) / BPS;
         uint256 need = amount + fee;
@@ -189,6 +219,8 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         idle -= fromIdle;
         uint256 fromTrove = need - fromIdle;
         if (fromTrove > 0) {
+            // Mezo only lets a trove borrow more in Recovery Mode with new BTC alongside.
+            if (troveManager.checkRecoveryMode(price)) revert RecoveryMode();
             _ensureCapacity(fromTrove, upperHint, lowerHint);
             borrowerOps.withdrawMUSD(fromTrove, upperHint, lowerHint);
         }
@@ -203,7 +235,7 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         totalShares += newShares;
         reserve += fee;
 
-        _requireHealthy(msg.sender, openRatio, priceFeed.fetchPrice());
+        _requireHealthy(msg.sender, openRatio, price);
         musd.safeTransfer(msg.sender, amount);
         emit Borrowed(msg.sender, amount, added, fee);
     }
@@ -235,7 +267,9 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         a.coll -= amount;
 
         if (!closed) {
-            _requireHealthy(msg.sender, openRatio, priceFeed.fetchPrice());
+            uint256 price = priceFeed.fetchPrice();
+            if (troveManager.checkRecoveryMode(price)) revert RecoveryMode();
+            _requireHealthy(msg.sender, openRatio, price);
             borrowerOps.withdrawColl(amount, upperHint, lowerHint);
             trackedColl -= amount;
         }
@@ -243,8 +277,10 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         emit Withdrawn(msg.sender, amount);
     }
 
-    /// Closes one unhealthy account. The caller pays its debt in MUSD (or the part its BTC can
-    /// cover) and receives its BTC worth that payment plus `closeBonus`.
+    /// Closes one unhealthy account (or, after a shutdown's grace period, any account that still
+    /// owes). The caller pays its debt in MUSD (or the part its BTC can cover) and receives its BTC
+    /// worth that payment plus `closeBonus`. In Mezo Recovery Mode the BTC cannot leave the trove,
+    /// so it is credited to the caller's own account in the vault instead.
     function closeAccount(address account, address upperHint, address lowerHint)
         external
         nonReentrant
@@ -256,7 +292,8 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         uint256 debt = _accountDebt(account, a.shares);
         if (debt == 0) revert NoDebt();
         uint256 price = priceFeed.fetchPrice();
-        if (a.coll * price >= debt * closeRatio) revert Healthy();
+        bool forced = shutdownAt != 0 && block.timestamp >= shutdownAt + WIND_DOWN_GRACE;
+        if (!forced && a.coll * price >= debt * closeRatio) revert Healthy();
 
         uint256 sharesDebt = _debtOfShares(a.shares); // the anchor's gas deposit stays with the trove
         uint256 seize = Math.mulDiv(sharesDebt, ONE + closeBonus, price);
@@ -275,12 +312,83 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         // Pay down what was collected; anything the reserve could not cover stays in the vault's
         // debt and is carried by the remaining shares.
         _payDown(pay + fromReserve, upperHint, lowerHint);
-
         a.coll -= seize;
-        borrowerOps.withdrawColl(seize, upperHint, lowerHint);
-        trackedColl -= seize;
-        _sendBtc(msg.sender, seize);
+
+        if (troveManager.checkRecoveryMode(price)) {
+            // The BTC stays in the trove; the closer owns it in the vault's ledger.
+            _settle(msg.sender);
+            _accounts[msg.sender].coll += seize;
+            emit ClosedInRecoveryMode(account, msg.sender, seize);
+        } else {
+            borrowerOps.withdrawColl(seize, upperHint, lowerHint);
+            trackedColl -= seize;
+            _sendBtc(msg.sender, seize);
+        }
         emit AccountClosed(account, msg.sender, sharesDebt, pay, seize, fromReserve, shortfall - fromReserve);
+    }
+
+    // ---------------------------------------------------------------- winding down
+
+    /// Stops new deposits and loans. Repaying and withdrawing keep working. After
+    /// `WIND_DOWN_GRACE`, accounts that still owe can be closed by anyone.
+    function shutdown() external onlyOwner {
+        if (shutdownAt != 0) revert IsShutdown();
+        if (anchor == address(0) || closed) revert NotOpen();
+        shutdownAt = block.timestamp;
+        emit Shutdown(block.timestamp, block.timestamp + WIND_DOWN_GRACE);
+    }
+
+    /// Repays and closes the vault's Mezo trove once nobody owes. The MUSD the vault holds pays
+    /// the trove first, then the reserve, then the caller tops up any interest left (a few wei).
+    /// All BTC returns to the vault and every account withdraws its own.
+    function closeTrove() external nonReentrant {
+        _sync();
+        if (closed) revert IsClosed();
+        if (shutdownAt == 0) revert NotShutdown();
+        if (totalShares > DEAD_SHARES) revert DebtOutstanding();
+        // Mezo will not close a trove in Recovery Mode; say so before taking anyone's MUSD.
+        if (troveManager.checkRecoveryMode(priceFeed.fetchPrice())) revert RecoveryMode();
+
+        (uint256 coll, uint256 netDebt) = _trove();
+        uint256 need = netDebt > idle ? netDebt - idle : 0;
+        uint256 fromReserve = Math.min(need, reserve);
+        reserve -= fromReserve;
+        uint256 fromCaller = need - fromReserve;
+        if (fromCaller > 0) musd.safeTransferFrom(msg.sender, address(this), fromCaller);
+        uint256 leftover = idle + fromReserve + fromCaller - netDebt;
+        idle = 0;
+        reserve += leftover;
+
+        uint256 before = address(this).balance;
+        borrowerOps.closeTrove(); // burns netDebt MUSD from the vault and returns the trove's BTC
+        uint256 returned = address(this).balance - before;
+        if (returned < coll && totalShares > 0) {
+            // Should not happen; if Mezo returned less, the gap is shared like a redemption.
+            lossPerShare += Math.mulDiv(coll - returned, ACC, totalShares);
+        }
+        trackedColl = 0;
+        closed = true;
+        woundDown = true;
+        emit WoundDown(returned, netDebt, fromReserve, fromCaller);
+    }
+
+    /// After Mezo closed the trove (full redemption or liquidation): takes this account's share of
+    /// the MUSD the vault was holding.
+    function claimMusd() external nonReentrant {
+        uint256 amount = claimableMusd(msg.sender);
+        if (amount == 0) revert NothingToClaim();
+        musdClaimed[msg.sender] = true;
+        musd.safeTransfer(msg.sender, amount);
+        emit MusdClaimed(msg.sender, amount);
+    }
+
+    /// The reserve is only released once the vault has closed its own trove and nobody owes.
+    function withdrawReserve(address to, uint256 amount) external onlyOwner nonReentrant {
+        if (!woundDown) revert NotShutdown();
+        if (amount > reserve) amount = reserve;
+        reserve -= amount;
+        musd.safeTransfer(to, amount);
+        emit ReserveWithdrawn(to, amount);
     }
 
     /// Applies any redemption, redistribution or closure that Mezo made since the last action.
@@ -324,6 +432,16 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         uint256 cap = Math.mulDiv(v.coll, price, openRatio);
         v.maxBorrow = cap > v.debt ? cap - v.debt : 0;
         v.closePrice = v.debt == 0 || v.coll == 0 ? 0 : Math.mulDiv(v.debt, closeRatio, v.coll);
+    }
+
+    function claimableMusd(address account) public view returns (uint256) {
+        if (musdPerShare == 0 || musdClaimed[account]) return 0;
+        return Math.mulDiv(_accounts[account].shares, musdPerShare, ACC);
+    }
+
+    /// True while Mezo is in Recovery Mode: BTC cannot be withdrawn from the trove.
+    function recoveryMode() external view returns (bool) {
+        return troveManager.checkRecoveryMode(priceFeed.fetchPrice());
     }
 
     struct VaultView {
@@ -444,6 +562,12 @@ contract TinyVault is ReentrancyGuard, Ownable2Step {
         if (trackedColl > surplus && totalShares > 0) {
             lossPerShare += Math.mulDiv(trackedColl - surplus, ACC, totalShares);
         }
+        // The MUSD held against the debt (and the reserve) belongs to the accounts that carried
+        // the debt, in the same proportion as the BTC they lost.
+        uint256 held = idle + reserve;
+        if (held > 0 && totalShares > 0) musdPerShare = Math.mulDiv(held, ACC, totalShares);
+        idle = 0;
+        reserve = 0;
         trackedColl = 0;
         closed = true;
         emit VaultClosed(surplus);

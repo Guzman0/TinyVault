@@ -4,9 +4,9 @@ TinyVault is unaudited testnet software. This file records the checks run so far
 
 ## Tests
 
-- 29 unit and fuzz tests against a model of Mezo's borrowing rules (`test/TinyVault.t.sol`), including
+- 41 unit and fuzz tests against a model of Mezo's borrowing rules (`test/TinyVault.t.sol`), including
   fuzzing that the ledger always adds up to the Mezo loan.
-- 6 tests on a fork of Mezo testnet against Mezo's own contracts (`test/TinyVaultFork.t.sol`), including a
+- 8 tests on a fork of Mezo testnet against Mezo's own contracts (`test/TinyVaultFork.t.sol`), including a
   real redemption that walks through 266 riskier loans before reaching the vault.
 - Both run in CI on every push.
 
@@ -30,11 +30,22 @@ Reviewed and not a problem:
 | incorrect-equality (`debt == 0`) | Medium | A zero check on debt, not a balance comparison an attacker can steer. |
 | unused-return on `getEntireDebtAndColl` | Medium | Only the BTC and debt fields are needed; the pending-reward fields are already included in them. |
 
+## Wave 2 fixes (judges' review, Wave 1)
+
+| Finding | Fix | Tests |
+|---|---|---|
+| H-01: no wind-down path; the last depositors' BTC and the idle and reserve MUSD could be frozen | `shutdown()` (owner) stops new deposits and loans; repaying and withdrawing keep working. After a 7-day grace period anyone can close an account that still owes. Once nobody owes, anyone can call `closeTrove()`: the vault's MUSD repays Mezo (reserve, then the caller, top up the last few wei of interest), the trove closes, all BTC returns and every account withdraws its own. The reserve is released only after that. | `TinyVaultWindDown.t.sol`; `test_fork_windDownClosesTheRealTrove` on Mezo's real contracts |
+| Mezo Recovery Mode blocks the BTC withdrawals that closing an account relied on | `closeAccount` still works: the debt is repaid (Mezo allows repayments in Recovery Mode) and the closer's BTC is credited to it inside the vault, withdrawable when Recovery Mode ends. Withdrawals, new borrowing from the trove and `closeTrove` stop with a clear `RecoveryMode()` error; loans from MUSD the vault already holds still work. | `TinyVaultWindDown.t.sol`; `test_fork_closeAccountInRealRecoveryMode`, which lowers the price until Mezo's own TroveManager reports Recovery Mode (testnet: at 55% of today's price) |
+| If Mezo closes the trove itself, the idle and reserve MUSD stayed in the vault | It is shared among the accounts that carried the debt, by debt share, and claimed with `claimMusd()` | `test_heldMusdIsSharedWhenMezoLiquidates` |
+
+Slither after these changes: no new findings beyond `timestamp` notes on the 7-day grace period, which is intended.
+
 ## Known limits
 
 - If BTC falls far enough that the whole shared loan drops below Mezo's 110% line, Mezo can liquidate it,
   and the loss falls on the accounts with debt, in proportion to their debt. The vault then stops new
-  deposits, loans and repayments. The keeper below exists to close weak accounts long before that point.
+  deposits, loans and repayments; each account withdraws what BTC is left and claims its share of
+  the vault's MUSD. The keeper below exists to close weak accounts long before that point.
 - The anchor's loan must stay well collateralised: it carries Mezo's minimum debt, which cannot be repaid
   below 1,800 MUSD while the vault is open.
 - Closing an account relies on someone running a keeper. `keeper/` is a ready-made one; the closer earns 5%.

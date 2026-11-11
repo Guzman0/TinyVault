@@ -10,6 +10,7 @@ interface IBorrowerOperations {
     function repayMUSD(uint256 amount, address upperHint, address lowerHint) external;
     function refinance(address upperHint, address lowerHint) external;
     function claimCollateral() external;
+    function closeTrove() external;
 
     function minNetDebt() external view returns (uint256);
     function MUSD_GAS_COMPENSATION() external view returns (uint256);
@@ -45,6 +46,7 @@ interface ITroveManager {
     function getTroveDebt(address borrower) external view returns (uint256);
     function getTroveColl(address borrower) external view returns (uint256);
     function getTroveMaxBorrowingCapacity(address borrower) external view returns (uint256);
+    function checkRecoveryMode(uint256 price) external view returns (bool);
 }
 
 interface IPriceFeed {

@@ -63,6 +63,7 @@ contract MockMezo {
     MockPriceFeed public immutable feed;
     mapping(address => Trove) public troves;
     mapping(address => uint256) public surplus;
+    bool public recovery; // system below 150%: Mezo blocks BTC withdrawals, refinance and closes
 
     constructor() {
         token = new MockMUSD();
@@ -112,6 +113,7 @@ contract MockMezo {
 
     function withdrawColl(uint256 amount, address, address) external {
         Trove storage t = _active(msg.sender);
+        require(!recovery, "BorrowerOps: Collateral withdrawal not permitted Recovery Mode");
         t.coll -= amount;
         _requireMcr(t);
         uint256 newCap = t.coll * feed.price() / 1.1e18;
@@ -122,6 +124,7 @@ contract MockMezo {
 
     function withdrawMUSD(uint256 amount, address, address) external {
         Trove storage t = _active(msg.sender);
+        require(!recovery, "BorrowerOps: Operation must leave trove with ICR >= CCR");
         uint256 change = amount + getBorrowingFee(amount);
         require(t.cap >= t.principal + t.interest + change, "BorrowerOps: An operation that exceeds maxBorrowingCapacity is not permitted");
         t.principal += change;
@@ -141,10 +144,26 @@ contract MockMezo {
 
     function refinance(address, address) external {
         Trove storage t = _active(msg.sender);
+        require(!recovery, "BorrowerOps: Operation not permitted during Recovery Mode");
         uint256 net = t.principal + t.interest - MUSD_GAS_COMPENSATION;
         t.principal += getBorrowingFee(refinancingFeePercentage * net / 100);
         t.cap = t.coll * feed.price() / 1.1e18;
         _requireMcr(t);
+    }
+
+    function closeTrove() external {
+        Trove storage t = _active(msg.sender);
+        require(!recovery, "BorrowerOps: Operation not permitted during Recovery Mode");
+        uint256 net = t.principal + t.interest - MUSD_GAS_COMPENSATION;
+        require(token.balanceOf(msg.sender) >= net, "BorrowerOps: Caller doesnt have enough mUSD to make repayment");
+        token.burn(msg.sender, net);
+        uint256 coll = t.coll;
+        t.coll = 0;
+        t.principal = 0;
+        t.interest = 0;
+        t.status = Status.closedByOwner;
+        (bool ok,) = msg.sender.call{value: coll}("");
+        require(ok, "send");
     }
 
     function claimCollateral() external {
@@ -182,7 +201,15 @@ contract MockMezo {
         return troves[b].cap;
     }
 
+    function checkRecoveryMode(uint256) external view returns (bool) {
+        return recovery;
+    }
+
     // -------- test controls
+
+    function setRecovery(bool on) external {
+        recovery = on;
+    }
 
     function accrue(address b, uint256 interest) external {
         troves[b].interest += interest;

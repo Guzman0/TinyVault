@@ -167,6 +167,105 @@ contract TinyVaultForkTest is Test {
         assertEq(musd.balanceOf(tunde), want);
         assertGt(tm.getTroveMaxBorrowingCapacity(address(vault)), cap);
     }
+
+    /// Wave 2, finding H-01: the vault can wind down and close its real Mezo trove, and nothing is
+    /// left frozen.
+    function test_fork_windDownClosesTheRealTrove() public {
+        if (!forked) return;
+        uint256 coll = _btc(300);
+        vm.startPrank(amaka);
+        vault.deposit{value: coll}(address(0), address(0));
+        vault.borrow(100e18, address(0), address(0));
+        vm.stopPrank();
+
+        vm.prank(owner);
+        vault.shutdown();
+        _repayAllFork(amaka);
+        _repayAllFork(owner);
+
+        vm.prank(closer);
+        vault.closeTrove();
+        assertEq(uint8(tm.getTroveStatus(address(vault))), uint8(ITroveManager.Status.closedByOwner));
+        assertTrue(vault.woundDown());
+
+        uint256 a0 = amaka.balance;
+        uint256 o0 = owner.balance;
+        uint256 ac = vault.accountOf(amaka).coll;
+        uint256 oc = vault.accountOf(owner).coll;
+        vm.prank(amaka);
+        vault.withdraw(ac, address(0), address(0));
+        vm.prank(owner);
+        vault.withdraw(oc, address(0), address(0));
+        assertApproxEqAbs(amaka.balance - a0, coll, 2);
+        assertApproxEqAbs(owner.balance - o0, 0.06 ether, 2);
+        assertLe(address(vault).balance, 2);
+
+        uint256 r = vault.reserve();
+        console.log("reserve released (milli-MUSD)", r / 1e15);
+        vm.prank(owner);
+        vault.withdrawReserve(owner, type(uint256).max);
+        assertEq(musd.balanceOf(address(vault)), 0);
+    }
+
+    /// Wave 2: Mezo Recovery Mode, reached by lowering the price until Mezo's own TroveManager
+    /// reports it. Withdrawals stop with a clear error; an unhealthy account can still be closed,
+    /// with its BTC credited to the closer inside the vault.
+    function test_fork_closeAccountInRealRecoveryMode() public {
+        if (!forked) return;
+        vm.startPrank(amaka);
+        vault.deposit{value: _btc(300)}(address(0), address(0));
+        vault.borrow(195e18, address(0), address(0)); // near the 150% limit
+        vm.stopPrank();
+
+        // Find a price at which Mezo is in Recovery Mode while the vault's own trove stays above
+        // Mezo's 110%.
+        uint256 p0 = _price();
+        uint256 p;
+        for (uint256 pct = 95; pct >= 40; pct -= 5) {
+            uint256 q = p0 * pct / 100;
+            if (tm.checkRecoveryMode(q) && ITroveManagerIcr(address(tm)).getCurrentICR(address(vault), q) > 1.15e18) {
+                p = q;
+                break;
+            }
+        }
+        if (p == 0) {
+            console.log("no price puts testnet in Recovery Mode with the vault above 115%; skipped");
+            return;
+        }
+        console.log("Recovery Mode at BTC %", p * 100 / p0);
+        _setPrice(p);
+        assertTrue(vault.recoveryMode());
+        assertLt(vault.accountOf(amaka).ratio, 1.25e18);
+
+        vm.prank(amaka);
+        vm.expectRevert(TinyVault.RecoveryMode.selector);
+        vault.withdraw(1, address(0), address(0));
+
+        deal(address(musd), closer, 1000e18);
+        vm.startPrank(closer);
+        musd.approve(address(vault), type(uint256).max);
+        vault.closeAccount(amaka, address(0), address(0));
+        vm.stopPrank();
+        assertEq(vault.accountOf(amaka).debt, 0);
+        assertGt(vault.accountOf(closer).coll, 0);
+        assertEq(closer.balance, 0); // BTC could not leave Mezo; it is the closer's in the vault
+
+        // When the price recovers, the closer takes it out.
+        _setPrice(p0);
+        uint256 credited = vault.accountOf(closer).coll;
+        vm.prank(closer);
+        vault.withdraw(credited, address(0), address(0));
+        assertEq(closer.balance, credited);
+    }
+
+    function _repayAllFork(address who) internal {
+        uint256 d = vault.accountOf(who).debt;
+        deal(address(musd), who, musd.balanceOf(who) + d + 1e18);
+        vm.startPrank(who);
+        musd.approve(address(vault), type(uint256).max);
+        vault.repay(type(uint256).max, address(0), address(0));
+        vm.stopPrank();
+    }
 }
 
 interface ITroveManagerIcr {
