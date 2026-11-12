@@ -187,7 +187,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 .feed-row:hover{background:rgba(0,0,0,.03)}
 .feed-row .dot{width:10px;height:10px;border-radius:50%;background:#9C9282}
 .dot.k-borrow,.dot.k-open{background:#F7931A}.dot.k-repay,.dot.k-wound,.dot.k-claim{background:#2F8F5B}.dot.k-close,.dot.k-shutdown{background:#C24A33}.dot.k-redeem,.dot.k-redistribute{background:#5B7FB5}
-@media (max-width:640px){.feed-row{grid-template-columns:12px 1fr;}.feed-row>span:nth-child(3){grid-column:2}.feed-row>span:nth-child(4){display:none}}
+@media (max-width:640px){.feed-row{grid-template-columns:12px minmax(0,1fr) auto;row-gap:4px}.feed-row>span:nth-child(3){grid-column:2 / -1;grid-row:2}.feed-row>span:nth-child(4){grid-column:3;grid-row:1;white-space:nowrap}}
 
 /* close-line alerts */
 .alert { border-radius: 14px; padding: 14px 16px; margin: 4px 0 14px; border: 1px solid transparent; }
