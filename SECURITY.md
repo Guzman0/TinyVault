@@ -46,6 +46,12 @@ Slither after these changes: no new findings beyond `timestamp` notes on the 7-d
   and the loss falls on the accounts with debt, in proportion to their debt. The vault then stops new
   deposits, loans and repayments; each account withdraws what BTC is left and claims its share of
   the vault's MUSD. The keeper below exists to close weak accounts long before that point.
-- The anchor's loan must stay well collateralised: it carries Mezo's minimum debt, which cannot be repaid
-  below 1,800 MUSD while the vault is open.
+- The anchor cannot be closed on its own. It carries Mezo's minimum debt, and closing it would take the shared
+  loan below Mezo's 110% line, which Mezo refuses (checked on a fork: at $49,000 the close reverts with
+  "ICR < MCR"). So the anchor goes only when Mezo closes the whole shared loan, and at that price every account
+  that still owes loses its BTC, even one whose own ratio is healthy. Today that price is about $42,270, above
+  a small account's own close line. The app shows this price to everyone, uses it as each account's real close
+  price where it comes first, and warns within 15% of it; the keeper logs it on every run. The fix is a
+  better-collateralised anchor: adding BTC to it moves the line down. Before mainnet the contract should
+  refuse new loans while the anchor is below a set ratio, such as 250%.
 - Closing an account relies on someone running a keeper. `keeper/` is a ready-made one; the closer earns 5%.

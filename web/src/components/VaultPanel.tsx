@@ -1,4 +1,5 @@
 import { useApp } from '../state'
+import { sharedClosePrice } from '../lib/data'
 import { explorerAddress } from '../lib/chain'
 import { ADDR } from '../lib/config'
 import { fmtBtc, fmtMusd, fmtRatio, fmtUsd, toNum } from '../lib/format'
@@ -21,7 +22,7 @@ export function VaultPanel() {
       <div className="stats four">
         <Stat k="BTC in the loan" v={fmtBtc(vault.troveColl)} sub={`Worth ${fmtUsd(toNum(vault.troveColl * vault.price / ONE))}`} />
         <Stat k="Owed to Mezo" v={fmtMusd(vault.troveDebt, 0)} sub="Includes Mezo's 200 MUSD gas deposit" />
-        <Stat k="Ratio Mezo sees" v={vault.closed ? 'Closed' : fmtRatio(vault.ratio)} sub="Mezo's line is 110%" />
+        <Stat k="Ratio Mezo sees" v={vault.closed ? 'Closed' : fmtRatio(vault.ratio)} sub={vault.closed ? "Mezo's line is 110%" : `Mezo's line is 110%: BTC at ${fmtUsd(toNum(sharedClosePrice(vault)))}`} />
         <Stat k="Reserve" v={fmtMusd(vault.reserve)} sub="Pays first if an account falls short" />
       </div>
       <p className="footnote">

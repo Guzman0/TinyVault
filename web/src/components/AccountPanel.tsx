@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../state'
-import { loadAccount } from '../lib/data'
+import { effectiveClosePrice, loadAccount, MEZO_MCR, sharedClosePrice } from '../lib/data'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
@@ -50,15 +50,16 @@ export function AccountPanel() {
       <Gauge ratio={me.ratio} closeRatio={params.closeRatio} openRatio={params.openRatio} />
       <div className="stats">
         <Stat k="BTC in the vault" v={fmtBtc(me.coll)} sub={`Worth ${fmtUsd(valueUsd)}`} />
-        <Stat k="You owe" v={fmtMusd(me.debt)} sub={hasDebt ? `Closes if BTC falls to ${fmtUsd(toNum(me.closePrice))}` : 'No loan yet'} />
+        <Stat k="You owe" v={fmtMusd(me.debt)} sub={hasDebt ? `Closes if BTC falls to ${fmtUsd(toNum(effectiveClosePrice(me, vault, account)))}` : 'No loan yet'} />
         {vault.closed || vault.shutdownAt > 0n || OTHER_VAULT
           ? <Stat k="You can borrow" v="0 MUSD" sub={OTHER_VAULT ? 'Old vault: repay and withdraw only' : vault.closed ? 'The vault is closed' : 'The vault is winding down'} />
           : <Stat k="You can borrow" v={fmtMusd(me.maxBorrow)} sub="Before fees, at the 150% limit" />}
       </div>
 
       {firstDone && <div className="notice good">{firstDone}</div>}
+      {hasDebt && !vault.closed && <SharedNote />}
       <CloseAlert m={me} p={params} v={vault} onFix={(t, amt) => { picked.current = true; setTab(t); setAmount(trim(amt)) }} />
-      <NotifyToggle account={account} m={me} p={params} />
+      <NotifyToggle account={account} m={me} p={params} v={vault} />
 
       {me.claimable > 0n && (
         <div className="claim">
@@ -79,9 +80,25 @@ export function AccountPanel() {
           </button>
         ))}
       </div>
-      {tab === 'repay' && hasDebt && !vault.closed && <PayOff />}
+      {tab === 'repay' && hasDebt && !vault.closed && account.toLowerCase() !== vault.anchor.toLowerCase() && <PayOff />}
       <ActionForm tab={tab} amount={amount} setAmount={setAmount} />
     </div>
+  )
+}
+
+/** When the shared loan's line is above this account's own, say which one comes first. */
+function SharedNote() {
+  const { account, me, vault } = useApp()
+  const m = me!, v = vault!
+  const shared = sharedClosePrice(v)
+  const anchor = !!account && account.toLowerCase() === v.anchor.toLowerCase()
+  if (!anchor && shared <= m.closePrice) return null
+  return (
+    <p className="shared-note">
+      {anchor
+        ? `You are the anchor: your account carries Mezo's minimum loan, so it cannot be closed on its own. It goes only if Mezo closes the whole shared loan, at ${fmtUsd(toNum(shared))}. Adding BTC moves that line down for everyone.`
+        : `Your own close line is ${fmtUsd(toNum(m.closePrice))}, but the shared loan closes first, at ${fmtUsd(toNum(shared))}. At that price Mezo closes the whole loan: you keep the MUSD you borrowed and lose the BTC in your account.`}
+    </p>
   )
 }
 
@@ -166,7 +183,7 @@ function Calculator() {
           <Row k="Worth" v={fmtUsd(value)} />
           <Row k="A safe loan, at 200%" v={tooSmall ? `under ${fmtNum(toNum(params.minBorrow), 0)} MUSD` : fmtMusd(safe, 0)} />
           <Row k="The most, at 150%" v={fmtMusd(atLimit, 0)} />
-          <Row k="A safe loan closes if BTC falls to" v={`${fmtUsd(closeAt)}, ${Math.floor((1 - toNum(params.closeRatio) / toNum(FIRST_RATIO)) * 100)}% below today`} />
+          <Row k="A safe loan closes if BTC falls to" v={`${fmtUsd(Math.max(closeAt, toNum(sharedClosePrice(vault))))}, ${Math.floor((1 - Math.max(closeAt, toNum(sharedClosePrice(vault))) / toNum(vault.price)) * 100)}% below today`} />
         </div>
       )}
       {tooSmall && wei > 0n && <small className="muted">The smallest loan is {fmtNum(toNum(params.minBorrow), 0)} MUSD, so a safe one needs about {fmtBtc(params.minBorrow * feeK / ONE * FIRST_RATIO / vault.price)}.</small>}
@@ -192,7 +209,7 @@ function FirstLoan({ onDone }: { onDone: (s: string) => void }) {
     const debt = wei + reserveFee + mezoFee
     const raw = (debt * FIRST_RATIO + v.price - 1n) / v.price
     const coll = ((raw + 10n ** 12n - 1n) / 10n ** 12n) * 10n ** 12n // round up to 0.000001 BTC
-    const closeAt = toNum(debt * p.closeRatio / coll)
+    const closeAt = Math.max(toNum(debt * p.closeRatio / coll), toNum(sharedClosePrice(v)))
     const need = wei + reserveFee
     return { debt, fees: reserveFee + mezoFee, coll, closeAt, fall: 1 - closeAt / toNum(v.price), fromTrove: need > v.idle ? need - v.idle : 0n }
   }, [wei, p, v])
@@ -263,9 +280,16 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
       newDebt = debt + w + fees
     }
     const ratio = newDebt === 0n ? null : Number(newColl * price / newDebt) / 1e18
-    const closeAt = newDebt === 0n || newColl === 0n ? null : toNum(newDebt * p.closeRatio / newColl)
+    // The shared loan moves with this account's change too; repayments held by the vault are
+    // ignored here, so this errs on the cautious side.
+    const tColl = v.troveColl + newColl - coll
+    const tDebt = v.troveDebt + (newDebt > debt ? newDebt - debt : 0n)
+    const shared = tColl > 0n ? toNum(tDebt * MEZO_MCR / tColl) : 0
+    const own = newDebt === 0n || newColl === 0n ? null : toNum(newDebt * p.closeRatio / newColl)
+    const isAnchor = !!account && account.toLowerCase() === v.anchor.toLowerCase()
+    const closeAt = own === null ? null : isAnchor ? shared : Math.max(own, shared)
     return { newColl, newDebt, fees, ratio, closeAt }
-  }, [tab, wei, m, p, price])
+  }, [tab, wei, m, p, price, v, account])
 
   const max = useMemo(() => {
     if (tab === 'deposit') return b.btc > 10n ** 15n ? b.btc - 10n ** 15n : 0n // leave gas

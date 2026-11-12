@@ -117,12 +117,20 @@ async function tick() {
   log(`BTC $${fmt(price)} · ${known.size} accounts · close below ${fmt(closeRatio * 100n)}% · Mezo loan at ${fmt(state.ratio * 100n, 0)}%` +
     (recovery ? ' · Mezo in Recovery Mode (closed BTC is credited in the vault)' : '') +
     (shutdownAt > 0n ? (forced ? ' · winding down: every account still owing can be closed' : ' · winding down') : ''))
+  // The anchor cannot be closed on its own; it goes when Mezo closes the whole loan at 110%.
+  const shared = state.troveColl > 0n ? state.troveDebt * 11n * 10n ** 17n / state.troveColl : 0n
+  if (shared > 0n) {
+    const near = price < shared * 115n / 100n
+    log(`${near ? 'WARN   ' : ''}shared loan closes at $${fmt(shared)} (${fmt((price - shared) * 100n * 10n ** 18n / price, 0)}% below today)` +
+      (near ? ': add BTC to the anchor, or accounts with debt should repay' : ''))
+  }
   let found = 0
   for (const account of known) {
     const v = await read('accountOf', [account])
     if (v.debt === 0n) continue
     const pct = fmt(v.ratio * 100n, 1)
     // Within 15 points of the close line: flagged in the public log so the owner can act first.
+    if (account.toLowerCase() === state.anchor.toLowerCase() && !forced) { log(`  anchor ${account} ${pct}%  carries Mezo's minimum: goes only with the shared loan`); continue }
     if (v.ratio >= closeRatio && !forced && v.ratio < closeRatio + 15n * 10n ** 16n) { log(`  NEAR   ${account} ${pct}%  closes at $${fmt(v.closePrice)}: repay or add BTC`); continue }
     if (v.ratio >= closeRatio && !forced) { log(`  ok     ${account} ${pct}%  closes at $${fmt(v.closePrice)}`); continue }
     found++

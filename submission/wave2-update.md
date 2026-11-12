@@ -20,11 +20,13 @@ Every point from the Wave 1 review is addressed, in a new vault deployed on Mezo
 
 7. First loan in one step, and a phone layout. A new user picks an amount of MUSD; the app works out the BTC for a 200% start and sends both steps. The whole app now fits a phone screen. Paying off is one step too: the app repays and returns the BTC together. A borrower who holds only the MUSD they received is short by the fees, so the app returns all but a sliver of BTC that covers them and explains it. Visitors can see what their BTC could borrow before connecting a wallet.
 
-8. The app shows the vault's state (open, winding down, Recovery Mode, closed), the wind-down buttons, a claim box, and an activity feed of every deposit, loan, repayment, withdrawal and close, each linked to the explorer.
+8. A risk we found and now show openly. The anchor carries Mezo's minimum loan, so it cannot be closed on its own: on a fork, closing it at $49,000 reverts because the shared loan would fall below Mezo's 110% line. It goes only when Mezo closes the whole shared loan, and then every account that still owes loses its BTC. Today that is at about $42,270, above a small account's own close line. The app now shows this price to every visitor, uses it as each account's close price when it comes first, and warns within 15% of it, and the keeper logs it on every run. The fix is a better-collateralised anchor, and before mainnet a contract rule that stops new loans while the anchor is below 250%.
 
-9. Independent users on testnet. [N] people other than me have used the vault: [addresses]. Their answers to four short questions are published in FEEDBACK.md in the repo.
+9. The app shows the vault's state (open, winding down, Recovery Mode, closed), the wind-down buttons, a claim box, and an activity feed of every deposit, loan, repayment, withdrawal and close, each linked to the explorer.
 
-10. Tests: 49 in CI on every push. 41 unit and fuzz tests, 8 on a fork of Mezo testnet against Mezo's real contracts, including the wind-down, Recovery Mode, a real redemption through 266 riskier troves, and a keeper close after a 23% BTC drop. A keeper close and a Mezo redemption cannot be forced on testnet without a real price drop or another trove redeeming, so those two are shown on the fork.
+10. Independent users on testnet. [N] people other than me have used the vault: [addresses]. Their answers to four short questions are published in FEEDBACK.md in the repo.
+
+11. Tests: 49 in CI on every push. 41 unit and fuzz tests, 8 on a fork of Mezo testnet against Mezo's real contracts, including the wind-down, Recovery Mode, a real redemption through 266 riskier troves, and a keeper close after a 23% BTC drop. A keeper close and a Mezo redemption cannot be forced on testnet without a real price drop or another trove redeeming, so those two are shown on the fork.
 
 **Who funds the anchor, and how it sustains itself**
 

@@ -162,3 +162,25 @@ export async function loadActivity(): Promise<Activity[]> {
   }))
   return out.sort((x, y) => (x.block > y.block ? -1 : 1))
 }
+
+/** Mezo's line for a single loan: below 110% it can close the whole trove. */
+export const MEZO_MCR = 11n * 10n ** 17n
+
+/**
+ * The BTC price at which Mezo can close the whole shared loan. The anchor carries Mezo's
+ * minimum, so it cannot be closed on its own; it goes at this price, and with it every account
+ * that still owes, whatever its own ratio. 0 if there is no open loan.
+ */
+export function sharedClosePrice(v: VaultState): bigint {
+  if (v.closed || v.troveColl === 0n) return 0n
+  return (v.troveDebt * MEZO_MCR) / v.troveColl
+}
+
+/** The price an account is really closed at: its own line, or the shared line if that comes first. */
+export function effectiveClosePrice(a: { address?: Address; debt: bigint; closePrice: bigint }, v: VaultState, who?: Address): bigint {
+  if (a.debt === 0n) return 0n
+  const shared = sharedClosePrice(v)
+  const isAnchor = (who ?? a.address)?.toLowerCase() === v.anchor.toLowerCase()
+  if (isAnchor) return shared
+  return shared > a.closePrice ? shared : a.closePrice
+}

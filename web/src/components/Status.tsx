@@ -1,7 +1,8 @@
 import { useApp } from '../state'
+import { sharedClosePrice } from '../lib/data'
 import { closeTrove, shutdown } from '../lib/actions'
 import { explorerTx } from '../lib/chain'
-import { fmtNum, shortAddr } from '../lib/format'
+import { fmtNum, fmtUsd, shortAddr, toNum } from '../lib/format'
 import { TxButton } from './ui'
 
 const DEAD_SHARES = 1000n
@@ -18,8 +19,21 @@ export function StatusBanner() {
     return <div className="notice bad"><strong>Mezo closed this vault's loan.</strong> Withdraw any BTC left in your account, and claim your share of the MUSD the vault was holding.</div>
   }
   const now = BigInt(Math.floor(Date.now() / 1000))
+  const shared = sharedClosePrice(vault)
+  const fall = shared > 0n ? 1 - toNum(shared) / toNum(vault.price) : 0
   return (
     <>
+      {shared > 0n && (
+        <div className={`notice shared ${fall < 0.3 ? 'bad' : fall < 0.5 ? 'warn' : 'calm'}`}>
+          <div>
+            <strong>The shared loan closes if BTC falls to {fmtUsd(toNum(shared))}</strong>, {Math.round(fall * 100)}% below today ({fmtUsd(toNum(vault.price))}).
+          </div>
+          <details className="small">
+            <summary>What this means</summary>
+            That is Mezo's 110% line for the one loan everyone shares. The anchor carries Mezo's minimum loan, so it cannot be closed on its own: it goes at this price, and so does every account that still owes, whatever its own ratio. Each account keeps the MUSD it borrowed. Adding BTC to the anchor moves this line down.
+          </details>
+        </div>
+      )}
       {vault.shutdownAt > 0n && (
         <div className="notice warn">
           <strong>Winding down.</strong> No new deposits or loans. Repay and withdraw as usual.{' '}

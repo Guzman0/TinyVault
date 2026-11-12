@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
-import type { AccountState, Params, VaultState } from '../lib/data'
+import { sharedClosePrice, type AccountState, type Params, type VaultState } from '../lib/data'
 import { fmtBtc, fmtMusd, fmtUsd, toNum } from '../lib/format'
 
 /** Warn this far above the close line: at 140% BTC can still fall about 11% before 125%. */
@@ -21,8 +21,26 @@ export function fixes(m: AccountState, p: Params, price: bigint) {
 
 type Fix = (tab: 'repay' | 'deposit', amount: bigint) => void
 
+/** Within 15% above the shared loan's line: every account that owes is at risk, whatever its ratio. */
+export function sharedNear(v: VaultState) {
+  const s = sharedClosePrice(v)
+  return s > 0n && v.price < (s * 115n) / 100n
+}
+
 export function CloseAlert({ m, p, v, onFix }: { m: AccountState; p: Params; v: VaultState; onFix: Fix }) {
-  if (m.debt === 0n || v.closed || m.ratio >= warnRatio(p)) return null
+  if (m.debt === 0n || v.closed) return null
+  if (m.ratio >= warnRatio(p)) {
+    if (!sharedNear(v)) return null
+    return (
+      <div className="alert warn" role="alert">
+        <strong>The shared loan is near Mezo's line.</strong>
+        <p>If BTC falls to {fmtUsd(toNum(sharedClosePrice(v)))}, Mezo can close the whole loan, and every account that still owes loses its BTC, yours included. An account with no debt keeps its BTC.</p>
+        <div className="alert-actions">
+          <button className="btn small" onClick={() => onFix('repay', m.debt)}>Repay {fmtMusd(m.debt)}</button>
+        </div>
+      </div>
+    )
+  }
   const closable = m.ratio < p.closeRatio
   const fall = toNum(v.price) > 0 ? 1 - toNum(m.closePrice) / toNum(v.price) : 0
   const f = fixes(m, p, v.price)
@@ -57,7 +75,7 @@ function write(a: Address, on: boolean) {
  * re-reads the vault every minute; a notification fires when the account crosses the warning
  * line or the close line, once per crossing.
  */
-export function NotifyToggle({ account, m, p }: { account: Address; m: AccountState; p: Params }) {
+export function NotifyToggle({ account, m, p, v }: { account: Address; m: AccountState; p: Params; v?: VaultState }) {
   const supported = typeof window !== 'undefined' && 'Notification' in window
   const [on, setOn] = useState(() => supported && read(account) && Notification.permission === 'granted')
   const last = useRef<'ok' | 'warn' | 'close'>('ok')
@@ -65,7 +83,7 @@ export function NotifyToggle({ account, m, p }: { account: Address; m: AccountSt
   useEffect(() => { setOn(supported && read(account) && Notification.permission === 'granted') }, [account, supported])
 
   useEffect(() => {
-    const level = m.debt === 0n ? 'ok' : m.ratio < p.closeRatio ? 'close' : m.ratio < warnRatio(p) ? 'warn' : 'ok'
+    const level = m.debt === 0n ? 'ok' : m.ratio < p.closeRatio ? 'close' : m.ratio < warnRatio(p) || (v && sharedNear(v)) ? 'warn' : 'ok'
     if (on && level !== 'ok' && level !== last.current) {
       try {
         new Notification(level === 'close' ? 'TinyVault: your account can be closed' : 'TinyVault: your account is near its close line', {
@@ -75,7 +93,7 @@ export function NotifyToggle({ account, m, p }: { account: Address; m: AccountSt
       } catch { /* some mobile browsers only notify from a service worker */ }
     }
     last.current = level
-  }, [on, m.ratio, m.debt, p])
+  }, [on, m.ratio, m.debt, p, v])
 
   if (!supported || m.debt === 0n) return null
   const toggle = async () => {
