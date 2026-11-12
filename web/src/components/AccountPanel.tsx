@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../state'
+import { hasWallet } from '../lib/chain'
 import { effectiveClosePrice, loadAccount, MEZO_MCR, sharedClosePrice } from '../lib/data'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
@@ -26,12 +27,18 @@ export function AccountPanel() {
       <div className="panel panel-account">
         <h2>Your account</h2>
         <Calculator />
-        <div className="connect-row">
-          <button className="btn" onClick={() => connect().catch((e) => setErr(errorText(e)))}>Connect wallet</button>
-          <a className="small-link" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Get testnet BTC</a>
-        </div>
-        {err && <p className="bad">{err}</p>}
-        <small className="muted">Mezo Testnet: the app adds the network to your wallet when you connect.</small>
+        {!hasWallet() && isPhone() ? (
+          <OpenInWallet />
+        ) : (
+          <>
+            <div className="connect-row">
+              <button className="btn" onClick={() => connect().catch((e) => setErr(errorText(e)))}>Connect wallet</button>
+              <a className="small-link" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Get testnet BTC</a>
+            </div>
+            {err && <p className="bad">{err}</p>}
+            <small className="muted">Mezo Testnet: the app adds the network to your wallet when you connect.</small>
+          </>
+        )}
       </div>
     )
   }
@@ -147,6 +154,31 @@ function PayOff() {
         }}
       />
       {!full && <small className="muted">To clear the last {fmtMusd(short, 2)}, swap a little BTC for MUSD in <a href="https://mezo.org/docs/users/features/mezo-swap" target="_blank" rel="noreferrer">Mezo Swap</a>, or ask a friend for it.</small>}
+    </div>
+  )
+}
+
+function isPhone() {
+  return typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+}
+
+/**
+ * A phone browser has no wallet extension. The page has to be opened inside the wallet app's
+ * own browser, which MetaMask's app link does in one tap; any other wallet app can open the link.
+ */
+function OpenInWallet() {
+  const [copied, setCopied] = useState(false)
+  const here = window.location.href
+  const metamask = `https://metamask.app.link/dapp/${here.replace(/^https?:\/\//, '')}`
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(here); setCopied(true) } catch { /* clipboard blocked */ }
+  }
+  return (
+    <div className="open-wallet">
+      <p>On a phone, open this page inside your wallet app's browser to connect.</p>
+      <a className="btn" href={metamask}>Open in MetaMask</a>
+      <button className="btn ghost" onClick={copy}>{copied ? 'Link copied' : 'Copy link for another wallet'}</button>
+      <small className="muted">In another wallet app, paste the link into its browser tab. Then get testnet BTC from the <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Mezo faucet</a>.</small>
     </div>
   )
 }

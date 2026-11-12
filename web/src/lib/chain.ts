@@ -21,7 +21,7 @@ export function onWalletChange(cb: () => void) {
 
 export async function connectWallet(): Promise<{ account: Address; wallet: WalletClient }> {
   const p = provider()
-  if (!p) throw new Error('No wallet found. Install MetaMask or Rabby, then reload this page.')
+  if (!p) throw new Error('No wallet found. On a computer, install MetaMask or Rabby and reload. On a phone, open this page in your wallet app\'s browser.')
   const accounts = (await p.request({ method: 'eth_requestAccounts' })) as Address[]
   await ensureMezo(p)
   return { account: accounts[0], wallet: createWalletClient({ chain: mezoTestnet, transport: custom(p), account: accounts[0] }) }

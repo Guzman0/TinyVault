@@ -230,3 +230,6 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 .notice.calm { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); }
 .shared-note { font-size: 13px; line-height: 1.5; color: var(--muted); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; margin: 0 0 14px; }
 .notice.shared summary { cursor: pointer; font-weight: 600; margin-bottom: 4px; }
+.open-wallet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.open-wallet p { margin: 0; font-size: 15px; }
+.open-wallet .btn { text-align: center; text-decoration: none; }
