@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../state'
+import { loadAccount } from '../lib/data'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
@@ -11,19 +12,26 @@ const ONE = 10n ** 18n
 
 export function AccountPanel() {
   const { account, wallet, connect, me, params, vault, balances } = useApp()
-  const [tab, setTab] = useState<Tab>(OTHER_VAULT ? 'repay' : 'deposit')
+  const [tab, setTab] = useState<Tab>(OTHER_VAULT || (me && me.debt > 0n) ? 'repay' : 'deposit')
   const [amount, setAmount] = useState('')
   const [err, setErr] = useState('')
   const [firstDone, setFirstDone] = useState('')
+  // Someone with a loan most often comes back to repay: open on Repay once, unless they picked a tab.
+  const picked = useRef(false)
+  const owes = !!me && me.debt > 0n
+  useEffect(() => { if (owes && !picked.current) setTab('repay') }, [owes])
 
   if (!account || !wallet) {
     return (
       <div className="panel panel-account">
         <h2>Your account</h2>
-        <p className="muted">Connect a wallet on Mezo Testnet to deposit BTC and borrow. You need a little testnet BTC from the faucet.</p>
-        <button className="btn" onClick={() => connect().catch((e) => setErr(errorText(e)))}>Connect wallet</button>
+        <Calculator />
+        <div className="connect-row">
+          <button className="btn" onClick={() => connect().catch((e) => setErr(errorText(e)))}>Connect wallet</button>
+          <a className="small-link" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Get testnet BTC</a>
+        </div>
         {err && <p className="bad">{err}</p>}
-        <a className="small-link" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Get testnet BTC</a>
+        <small className="muted">Mezo Testnet: the app adds the network to your wallet when you connect.</small>
       </div>
     )
   }
@@ -49,7 +57,7 @@ export function AccountPanel() {
       </div>
 
       {firstDone && <div className="notice good">{firstDone}</div>}
-      <CloseAlert m={me} p={params} v={vault} onFix={(t, amt) => { setTab(t); setAmount(trim(amt)) }} />
+      <CloseAlert m={me} p={params} v={vault} onFix={(t, amt) => { picked.current = true; setTab(t); setAmount(trim(amt)) }} />
       <NotifyToggle account={account} m={me} p={params} />
 
       {me.claimable > 0n && (
@@ -66,12 +74,103 @@ export function AccountPanel() {
       )}
       <div className="tabs" role="tablist">
         {(['deposit', 'borrow', 'repay', 'withdraw'] as Tab[]).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); setAmount('') }}>
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => { picked.current = true; setTab(t); setAmount('') }}>
             {t === 'deposit' ? 'Add BTC' : t === 'borrow' ? 'Borrow' : t === 'repay' ? 'Repay' : 'Withdraw'}
           </button>
         ))}
       </div>
+      {tab === 'repay' && hasDebt && !vault.closed && <PayOff />}
       <ActionForm tab={tab} amount={amount} setAmount={setAmount} />
+    </div>
+  )
+}
+
+/**
+ * Pay off and take the BTC back in one go. A loan's fees are added to the debt, so a borrower
+ * who only holds the MUSD they received is a few cents short. Then this repays what they hold
+ * and returns all the BTC except the sliver that covers the rest, and says how to clear it.
+ */
+function PayOff() {
+  const { account, wallet, me, vault, balances } = useApp()
+  const m = me!, v = vault!, b = balances!
+  const full = b.musd >= m.debt + m.debt / 1000n // a little room for interest accrued since the read
+  const pay = full ? m.debt : b.musd
+  const short = full ? 0n : m.debt - b.musd
+  const keep = short === 0n ? 0n : (short * FIRST_RATIO + v.price - 1n) / v.price // the sliver stays at 200%, far from any close
+  const back = m.coll > keep ? m.coll - keep : 0n
+  if (pay === 0n) {
+    return (
+      <div className="payoff">
+        <h3>{fmtMusd(m.debt, 2)} left to repay</h3>
+        <p>Repay it to take back the last {fmtBtc(m.coll)}. Your wallet has no MUSD yet: swap a little BTC for MUSD in <a href="https://mezo.org/docs/users/features/mezo-swap" target="_blank" rel="noreferrer">Mezo Swap</a>, or ask a friend to send some, then come back here.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="payoff">
+      <h3>{full ? 'Pay off and take your BTC back' : 'Pay off what you can and take your BTC back'}</h3>
+      <p>
+        {full
+          ? `Repays your ${fmtMusd(m.debt)} and returns all ${fmtBtc(m.coll)}.`
+          : `You hold ${fmtMusd(b.musd)} and owe ${fmtMusd(m.debt)}: the ${fmtMusd(short, 2)} gap is the loan's fees. This repays ${fmtMusd(b.musd)} and returns ${fmtBtc(back)}. About ${fmtBtc(keep)} (${fmtUsd(toNum(keep * v.price / ONE))}) stays to cover the ${fmtMusd(short, 2)} still owed; repay it whenever you have the MUSD and the rest comes back too.`}
+      </p>
+      <TxButton
+        label={full ? `Repay ${fmtMusd(m.debt)} and withdraw ${fmtBtc(m.coll)}` : `Repay ${fmtMusd(b.musd)} and withdraw ${fmtBtc(back)}`}
+        done={full ? 'Paid off. Your BTC is back in your wallet.' : 'Done. Most of your BTC is back in your wallet.'}
+        run={async (step) => {
+          if (!account || !wallet) throw new Error('Connect a wallet.')
+          await repay(wallet, account, full ? 2n ** 255n : pay, m.debt, (s) => step(`Step 1 of 2. ${s}`))
+          // Read the account again: interest moves the debt a little between the two steps.
+          const now = await loadAccount(account)
+          const lock = now.debt === 0n ? 0n : (now.debt * FIRST_RATIO + v.price - 1n) / v.price
+          const out = now.coll > lock ? now.coll - lock : 0n
+          if (out === 0n) throw new Error('Repaid. Nothing more can be withdrawn yet.')
+          return withdraw(wallet, account, out, (s) => step(`Step 2 of 2. ${s}`))
+        }}
+      />
+      {!full && <small className="muted">To clear the last {fmtMusd(short, 2)}, swap a little BTC for MUSD in <a href="https://mezo.org/docs/users/features/mezo-swap" target="_blank" rel="noreferrer">Mezo Swap</a>, or ask a friend for it.</small>}
+    </div>
+  )
+}
+
+const BTC_PRESETS = ['0.001', '0.005', '0.01']
+
+/** Before connecting: how much could this much BTC borrow, and when would it be closed? */
+function Calculator() {
+  const { params, vault } = useApp()
+  const [btc, setBtc] = useState('0.005')
+  if (!params || !vault) return <p className="muted">Reading the vault from Mezo testnet</p>
+  const wei = toWei(btc) ?? 0n
+  const value = toNum(wei * vault.price / ONE)
+  const feeK = ONE + BigInt(params.reserveFeeBps) * ONE / 10_000n // borrowed amount → debt, roughly
+  const atLimit = wei * vault.price / params.openRatio * ONE / feeK
+  const safe = wei * vault.price / FIRST_RATIO * ONE / feeK
+  const closeAt = toNum(vault.price * params.closeRatio / FIRST_RATIO)
+  const tooSmall = safe < params.minBorrow
+  return (
+    <div className="calc">
+      <p className="muted">How much could you borrow?</p>
+      <label className="field">
+        <span>BTC you have</span>
+        <div className="input-row">
+          <input inputMode="decimal" value={btc} onChange={(e) => setBtc(e.target.value)} aria-label="BTC you have" />
+          <span className="unit">BTC</span>
+        </div>
+        <div className="presets">
+          {BTC_PRESETS.map((x) => <button key={x} className="chip" aria-pressed={btc === x} onClick={() => setBtc(x)}>{x}</button>)}
+        </div>
+      </label>
+      {wei > 0n && (
+        <div className="summary">
+          <Row k="Worth" v={fmtUsd(value)} />
+          <Row k="A safe loan, at 200%" v={tooSmall ? `under ${fmtNum(toNum(params.minBorrow), 0)} MUSD` : fmtMusd(safe, 0)} />
+          <Row k="The most, at 150%" v={fmtMusd(atLimit, 0)} />
+          <Row k="A safe loan closes if BTC falls to" v={`${fmtUsd(closeAt)}, ${Math.floor((1 - toNum(params.closeRatio) / toNum(FIRST_RATIO)) * 100)}% below today`} />
+        </div>
+      )}
+      {tooSmall && wei > 0n && <small className="muted">The smallest loan is {fmtNum(toNum(params.minBorrow), 0)} MUSD, so a safe one needs about {fmtBtc(params.minBorrow * feeK / ONE * FIRST_RATIO / vault.price)}.</small>}
+      <small className="muted">On Mezo directly, the smallest loan needs about ${fmtNum(toNum(vault.minNetDebt * 11n / 10n * params.openRatio / ONE), 0)} of BTC.</small>
     </div>
   )
 }
@@ -119,6 +218,7 @@ function FirstLoan({ onDone }: { onDone: (s: string) => void }) {
           <Row k="You add" v={`${fmtBtc(plan.coll)} (${fmtUsd(toNum(plan.coll * v.price / ONE))})`} />
           <Row k="You get" v={fmtMusd(wei!)} />
           <Row k="You will owe" v={`${fmtMusd(plan.debt)} (fees ${fmtMusd(plan.fees, 2)})`} />
+          <Row k="To pay off in full" v={`keep ${fmtMusd(plan.fees, 2)} more than you borrow`} />
           <Row k="Closes if BTC falls to" v={`${fmtUsd(plan.closeAt)}, ${Math.round(plan.fall * 100)}% below today`} />
         </div>
       )}
@@ -212,6 +312,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
       {wei !== null && (
         <div className="summary">
           {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%)`} />}
+          {tab === 'borrow' && <Row k="To pay off in full" v={`${fmtMusd(preview.newDebt, 2)}, ${fmtMusd(preview.fees, 2)} more than you receive`} />}
           {(tab === 'borrow' || tab === 'repay') && <Row k="You will owe" v={fmtMusd(preview.newDebt)} />}
           {(tab === 'deposit' || tab === 'withdraw') && <Row k="BTC in the vault" v={fmtBtc(preview.newColl)} />}
           <Row k="Ratio after" v={preview.ratio === null ? 'No debt' : `${Math.round(preview.ratio * 100)}%`} bad={unsafe} />

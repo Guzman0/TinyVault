@@ -18,7 +18,7 @@ Every point from the Wave 1 review is addressed, in a new vault deployed on Mezo
 
 6. Lower gas with Mezo's sorted-list hints. The app and keeper read the trove's position from Mezo's SortedTroves before each transaction. On testnet's 359 troves a deposit drops from 1.81M to 0.43M gas and a withdrawal from 2.14M to 0.47M, about 76% less.
 
-7. First loan in one step, and a phone layout. A new user picks an amount of MUSD; the app works out the BTC for a 200% start and sends both steps. The whole app now fits a phone screen.
+7. First loan in one step, and a phone layout. A new user picks an amount of MUSD; the app works out the BTC for a 200% start and sends both steps. The whole app now fits a phone screen. Paying off is one step too: the app repays and returns the BTC together. A borrower who holds only the MUSD they received is short by the fees, so the app returns all but a sliver of BTC that covers them and explains it. Visitors can see what their BTC could borrow before connecting a wallet.
 
 8. The app shows the vault's state (open, winding down, Recovery Mode, closed), the wind-down buttons, a claim box, and an activity feed of every deposit, loan, repayment, withdrawal and close, each linked to the explorer.
 

@@ -208,7 +208,18 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 /* first loan in one step */
 .first { background: var(--surface-2); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .first h3 { font-size: 17px; }
-.first .presets { display: flex; flex-wrap: wrap; gap: 8px; }
-.first .presets .chip[aria-pressed='true'] { background: var(--ink); color: #fffcf6; border-color: var(--ink); }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.presets .chip[aria-pressed='true'] { background: var(--ink); color: #fffcf6; border-color: var(--ink); }
 .first .summary { background: var(--surface); }
 .or { font-size: 13px; color: var(--muted); text-align: center; margin: 0 0 12px; }
+
+/* visitor calculator */
+.calc { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 4px 0 18px; }
+.calc .field .presets { margin-top: 8px; }
+.connect-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+
+/* pay off in one go */
+.payoff { background: var(--good-bg); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.payoff h3 { font-size: 17px; }
+.payoff p { margin: 0; font-size: 14px; line-height: 1.5; color: #2f3b33; }
+.feed-row .you { color: var(--accent-ink, #a85400); font-weight: 700; }

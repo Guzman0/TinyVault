@@ -66,8 +66,9 @@ export function WindDown() {
 
 /** Every action in the vault, linked to Mezo's explorer: the full life cycle on chain. */
 export function ActivityFeed() {
-  const { activity, vault } = useApp()
+  const { activity, vault, account } = useApp()
   if (!vault) return null
+  const who = (a: string) => account && a.toLowerCase() === account.toLowerCase() ? 'You' : a.toLowerCase() === vault.anchor.toLowerCase() ? 'Anchor' : shortAddr(a as `0x${string}`)
   const people = new Set(activity.filter((a) => a.kind !== 'redeem' && a.kind !== 'redistribute' && a.kind !== 'shutdown' && a.kind !== 'wound').map((a) => a.account.toLowerCase()))
   return (
     <section className="panel">
@@ -81,12 +82,21 @@ export function ActivityFeed() {
         {activity.slice(0, 40).map((a) => (
           <a key={a.hash + a.kind + a.text} className="feed-row" href={explorerTx(a.hash)} target="_blank" rel="noreferrer">
             <span className={`dot k-${a.kind}`} />
-            <span className="mono">{a.account.toLowerCase() === vault.anchor.toLowerCase() ? 'Anchor' : shortAddr(a.account)}</span>
+            <span className={`mono${who(a.account) === 'You' ? ' you' : ''}`}>{who(a.account)}</span>
             <span>{a.text}</span>
-            <span className="mono muted small">#{a.block.toString()}</span>
+            <span className="muted small" title={`Block ${a.block.toString()}`}>{a.time ? ago(a.time) : `#${a.block.toString()}`}</span>
           </a>
         ))}
       </div>
     </section>
   )
+}
+
+function ago(ms: number) {
+  const s = Math.max(0, (Date.now() - ms) / 1000)
+  if (s < 90) return 'just now'
+  if (s < 3600) return `${Math.round(s / 60)} min ago`
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`
+  if (s < 7 * 86400) return `${Math.round(s / 86400)} d ago`
+  return new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }

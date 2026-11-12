@@ -116,6 +116,8 @@ export async function loadAccounts(): Promise<AccountState[]> {
 }
 
 export interface Activity {
+  /** Estimated from the block number, between the deploy block's and the latest block's times. */
+  time: number
   kind: string
   account: Address
   text: string
@@ -130,6 +132,12 @@ export async function loadActivity(): Promise<Activity[]> {
   const latest = await publicClient.getBlockNumber()
   const ranges: [bigint, bigint][] = []
   for (let from = DEPLOY_BLOCK; from <= latest; from += STEP) ranges.push([from, from + STEP - 1n > latest ? latest : from + STEP - 1n])
+  const [b0, b1] = await Promise.all([publicClient.getBlock({ blockNumber: DEPLOY_BLOCK }), publicClient.getBlock({ blockNumber: latest })]).catch(() => [null, null])
+  const timeOf = (n: bigint) => {
+    if (!b0 || !b1 || b1.number === b0.number) return 0
+    const t = Number(b0.timestamp) + (Number(n - b0.number) * Number(b1.timestamp - b0.timestamp)) / Number(b1.number - b0.number)
+    return t * 1000
+  }
   const out: Activity[] = []
   await Promise.all(ranges.map(async ([fromBlock, toBlock]) => {
     const logs = await publicClient.getContractEvents({ address: ADDR.vault, abi: vaultAbi, fromBlock, toBlock })
@@ -149,7 +157,7 @@ export async function loadActivity(): Promise<Activity[]> {
         case 'WoundDown': item = ['wound', ADDR.vault, `Mezo loan repaid and closed; ${fmt(a.collReturned, 4)} BTC returned to the vault`]; break
         case 'MusdClaimed': item = ['claim', a.account, `claimed ${fmt(a.amount)} MUSD`]; break
       }
-      if (item) out.push({ kind: item[0], account: item[1], text: item[2], hash: l.transactionHash, block: l.blockNumber })
+      if (item) out.push({ time: timeOf(l.blockNumber), kind: item[0], account: item[1], text: item[2], hash: l.transactionHash, block: l.blockNumber })
     }
   }))
   return out.sort((x, y) => (x.block > y.block ? -1 : 1))

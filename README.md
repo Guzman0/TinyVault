@@ -59,6 +59,8 @@ FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contr
 ## In the app
 
 - **First loan in one step.** Pick an amount of MUSD; the app works out the BTC for a 200% start (BTC can fall 37% before the 125% close line) and sends the deposit and the loan one after the other.
+- **See it before connecting.** A calculator shows what a given amount of BTC could borrow, safely at 200% or at most at 150%, and where a safe loan would be closed.
+- **Pay off in one step.** A loan's fees are added to the debt, so someone holding only the MUSD they borrowed is a few cents short. The app repays what they hold and returns all their BTC except a sliver kept at 200% to cover the rest, says exactly how much, and pays off in full when the wallet has enough. The borrow form shows up front how much more than the loan a full payoff takes.
 - **Close-line alerts.** Below 140% the account shows a warning with the BTC price it closes at and two one-tap fixes: the MUSD to repay or the BTC to add to get back to 150%. Browser notifications can be switched on; they fire while the page is open, since the app re-reads the vault every minute. The keeper's public log also marks these accounts as `NEAR`.
 - **Lower gas with Mezo's sorted-list hints.** Every change to the shared trove makes Mezo re-sort it among all troves. The app and the keeper read the right position from Mezo's `SortedTroves` first and pass it as hints. On testnet's 359 troves this cuts a deposit from 1.81M to 0.43M gas and a withdrawal from 2.14M to 0.47M, about 76% less.
 - Works at phone width.
