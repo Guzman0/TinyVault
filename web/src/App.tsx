@@ -60,12 +60,12 @@ function Page() {
         </section>
         </Entry>
 
-        <Entry index={1} label="Watch a loan" title="Watch a real loan, no wallet needed"><Demo /></Entry>
-        <Entry index={2} label="The shared loan" title="One Mezo loan, many owners"><VaultPanel /></Entry>
-        <Entry index={3} label="Every account" title="Every account, each with its own line"><Accounts /></Entry>
-        <Entry index={4} label="What happened" title="Everything that happened"><ActivityFeed /></Entry>
+        <Entry index={1} tone="warm" glyph="cycle" title="Watch a real loan, no wallet needed"><Demo /></Entry>
+        <Entry index={2} tone="ink" glyph="vault" title="One Mezo loan, many owners"><VaultPanel /></Entry>
+        <Entry index={3} tone="paper" glyph="ledger" title="Every account, each with its own line"><Accounts /></Entry>
+        <Entry index={4} tone="sheet" glyph="receipt" title="Everything that happened"><ActivityFeed /></Entry>
 
-        <Entry index={5} label="Why it's fair" title="How one shared loan stays fair">
+        <Entry index={5} tone="green" glyph="scale" title="How one shared loan stays fair">
         <section className="fair">
           <div className="cards">
             <div className="card"><h3>Your own limit</h3><p>Each account has its own ratio. Borrowing and withdrawing must keep it at 150% or more.</p></div>
