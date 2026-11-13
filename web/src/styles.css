@@ -377,8 +377,8 @@ html, body { overflow-x: clip; }
 
 /* how it works: many people, one ledger, one Mezo loan */
 .how { display: grid; gap: 28px; }
-.how-flow { display: grid; grid-template-columns: minmax(0, 1.1fr) 92px minmax(0, 1fr) 92px minmax(0, 1fr); align-items: stretch; }
-.how-node { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; display: grid; align-content: start; gap: 10px; }
+.how-flow { position: relative; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 72px; align-items: center; }
+.how-node { position: relative; z-index: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; display: grid; align-content: start; gap: 10px; }
 .how-node h3 { font-size: 17px; }
 .how-node p { margin: 0; font-size: 14px; line-height: 1.5; color: #3e4a42; }
 .how-node.vault { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(247, 147, 26, 0.12); }
@@ -400,7 +400,7 @@ html, body { overflow-x: clip; }
 .how-points { margin: 0; padding-left: 22px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; font-size: 15px; line-height: 1.5; color: #3e4a42; }
 .how-points b { color: var(--ink); }
 @media (max-width: 860px) {
-  .how-flow { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .how-flow { grid-template-columns: minmax(0, 1fr); gap: 64px; }
   .how-arrows { grid-auto-flow: column; justify-content: center; gap: 36px; padding: 10px 0; }
   .how-arrows span { padding: 0 0 0 0; height: 46px; width: 74px; display: flex; align-items: center; }
   .how-arrows span::after { left: auto; right: auto; top: 0; bottom: 0; width: 2px; height: auto; }
@@ -412,3 +412,16 @@ html, body { overflow-x: clip; }
   .how-arrows .back::before { right: -4px; left: auto; top: -6px; bottom: auto; border: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid var(--ink); }
   .how-points { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
+
+.how-beams { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+.how-beams .beam-base { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.how-beams .beam-pulse { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 9 91; stroke-dashoffset: 9; opacity: 0; animation: beam-run 3.2s cubic-bezier(.45, 0, .55, 1) infinite; }
+.how-beams .btc { stroke: var(--accent); }
+.how-beams .musd { stroke: var(--ink); animation-name: beam-back; }
+@keyframes beam-run { 0% { stroke-dashoffset: 9; opacity: 0; } 8% { opacity: 1; } 50% { stroke-dashoffset: -91; opacity: 1; } 56%, 100% { stroke-dashoffset: -91; opacity: 0; } }
+@keyframes beam-back { 0% { stroke-dashoffset: -91; opacity: 0; } 8% { opacity: 1; } 50% { stroke-dashoffset: 9; opacity: 1; } 56%, 100% { stroke-dashoffset: 9; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .how-beams .beam-pulse { display: none; } .how-beams .beam-base { stroke: var(--accent); opacity: 0.5; } }
+.how-legend { display: flex; gap: 20px; margin: -8px 0 0; font-size: 13px; color: var(--muted); }
+.how-legend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+.how-legend .btc { background: var(--accent); }
+.how-legend .musd { background: var(--ink); }
