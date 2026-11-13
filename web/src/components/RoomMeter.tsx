@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../state'
+import { Tick } from './Tick'
 import { refinanceCost, roomLeft } from '../lib/data'
 import { fmtMusd, fmtNum, toNum } from '../lib/format'
 
@@ -19,7 +20,7 @@ export function RoomMeter({ asking }: { asking?: bigint }) {
     <div className={`room${over ? ' over' : ''}`}>
       <div className="room-head">
         <span>Room left in the shared loan</span>
-        <span><b className="mono">{fmtMusd(room, 0)}</b> of {fmtNum(toNum(vault.troveCap), 0)}</span>
+        <span><b className="mono"><Tick text={fmtMusd(room, 0)} /></b> of {fmtNum(toNum(vault.troveCap), 0)}</span>
       </div>
       <div className="room-bar" role="img" aria-label={`${Math.round(used * 100)}% of the shared loan's limit is in use`}>
         <span style={{ width: `${Math.min(used, 1) * 100}%` }} />

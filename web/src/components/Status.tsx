@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../state'
 import { sharedClosePrice } from '../lib/data'
 import { DEMO_ADDRESS } from '../lib/demo'
@@ -83,20 +84,47 @@ export function WindDown() {
 /** Every action in the vault, linked to Mezo's explorer: the full life cycle on chain. */
 export function ActivityFeed() {
   const { activity, vault, account } = useApp()
+  // Lines that were not there on the last read slide in at the top with a highlight. The first
+  // load fills the list quietly.
+  const seen = useRef<Set<string> | null>(null)
+  const [fresh, setFresh] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    const keys = activity.map((a) => a.hash + a.kind + a.text)
+    if (!activity.length) return
+    if (seen.current) {
+      const add = keys.filter((k) => !seen.current!.has(k))
+      if (add.length) { setFresh(new Set(add)); const t = setTimeout(() => setFresh(new Set()), 6000); seen.current = new Set(keys); return () => clearTimeout(t) }
+    }
+    seen.current = new Set(keys)
+  }, [activity])
   if (!vault) return null
   const who = (a: string) => account && a.toLowerCase() === account.toLowerCase() ? 'You' : a.toLowerCase() === vault.anchor.toLowerCase() ? 'Anchor' : a.toLowerCase() === DEMO_ADDRESS.toLowerCase() ? 'Demo' : a.toLowerCase() === ADDR.vault.toLowerCase() ? 'Shared loan' : shortAddr(a as `0x${string}`)
-  const people = new Set(activity.filter((a) => a.kind !== 'redeem' && a.kind !== 'redistribute' && a.kind !== 'shutdown' && a.kind !== 'wound').map((a) => a.account.toLowerCase()))
+  // A demo run is four lines from the demo wallet; show each run as one line so real users stay
+  // visible, and leave the demo wallet out of the wallet count.
+  const demo = DEMO_ADDRESS.toLowerCase()
+  type Row = (typeof activity)[number] & { raw: string; ended?: boolean }
+  const rows: Row[] = []
+  for (const a of activity) {
+    const raw = a.hash + a.kind + a.text
+    const prev = rows[rows.length - 1]
+    if (a.account.toLowerCase() === demo) {
+      // Newest first: a run reads withdraw, repay, borrow, add. Its "added BTC" line ends it.
+      if (prev && prev.kind === 'demo' && !prev.ended) { if (a.kind === 'deposit') prev.ended = true; continue }
+      rows.push({ ...a, raw, kind: 'demo', text: 'ran a full loan: added BTC, borrowed, repaid and took the BTC back', ended: a.kind === 'deposit' })
+    } else rows.push({ ...a, raw })
+  }
+  const people = new Set(activity.filter((a) => a.account.toLowerCase() !== demo && a.kind !== 'redeem' && a.kind !== 'redistribute' && a.kind !== 'shutdown' && a.kind !== 'wound').map((a) => a.account.toLowerCase()))
   return (
     <section className="panel">
       <div className="panel-head">
         <span />
-        <span className="muted small">{fmtNum(activity.length, 0)} actions by {people.size} wallets</span>
+        <span className="muted small">{fmtNum(activity.filter((a) => a.account.toLowerCase() !== demo).length, 0)} actions by {people.size} wallets, plus demo runs</span>
       </div>
       <p className="muted">Read from the vault's events on Mezo testnet. Each line links to its transaction.</p>
       <div className="feed">
         {activity.length === 0 && <div className="empty">No activity yet</div>}
-        {activity.slice(0, 40).map((a) => (
-          <a key={a.hash + a.kind + a.text} className="feed-row" href={explorerTx(a.hash)} target="_blank" rel="noreferrer">
+        {rows.slice(0, 40).map((a) => (
+          <a key={a.raw} className={`feed-row${fresh.has(a.raw) ? ' fresh' : ''}`} href={explorerTx(a.hash)} target="_blank" rel="noreferrer">
             <span className={`dot k-${a.kind}`} />
             <span className={`mono${who(a.account) === 'You' ? ' you' : ''}`}>{who(a.account)}</span>
             <span>{a.text}</span>

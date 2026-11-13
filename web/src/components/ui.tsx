@@ -1,3 +1,4 @@
+import { Tick } from './Tick'
 import { useState } from 'react'
 import { useApp } from '../state'
 import { explorerTx } from '../lib/chain'
@@ -75,7 +76,7 @@ export function Stat({ k, v, sub }: { k: string; v: string; sub?: string }) {
   return (
     <div className="stat">
       <div className="stat-k">{k}</div>
-      <div className="stat-v">{v}</div>
+      <div className="stat-v"><Tick text={v} /></div>
       {sub && <div className="stat-sub">{sub}</div>}
     </div>
   )
