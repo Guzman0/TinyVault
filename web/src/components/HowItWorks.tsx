@@ -98,9 +98,13 @@ function useBeams(flow: React.RefObject<HTMLDivElement>, svg: React.RefObject<SV
           : curve(at(r, 'r'), at(v, 'l', spread)))
       })
       paths.push(stacked ? curve(at(v, 'b'), at(m, 't')) : curve(at(v, 'r'), at(m, 'l')))
-      out.innerHTML = paths.map((d, i) =>
-        `<path class="beam-base" d="${d}"/><path class="beam-pulse btc" pathLength="100" d="${d}" style="animation-delay:${(i * 0.45).toFixed(2)}s"/><path class="beam-pulse musd" pathLength="100" d="${d}" style="animation-delay:${(i * 0.45 + 1.6).toFixed(2)}s"/>`,
-      ).join('')
+      // One clock for every beam: BTC leaves all borrowers together, runs on into Mezo, then MUSD
+      // comes back from Mezo and out to all borrowers together.
+      const last = paths.length - 1
+      out.innerHTML = paths.map((d, i) => {
+        const leg = i === last ? 'leg2' : 'leg1'
+        return `<path class="beam-base" d="${d}"/><path class="beam-pulse btc ${leg}" pathLength="100" d="${d}"/><path class="beam-pulse musd ${leg}" pathLength="100" d="${d}"/>`
+      }).join('')
     }
     draw()
     const ro = new ResizeObserver(draw)
