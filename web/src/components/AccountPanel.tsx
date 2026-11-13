@@ -37,7 +37,7 @@ export function AccountPanel() {
             </div>
             {err && <p className="bad">{err}</p>}
             <button className="link-btn" onClick={() => addMezo().then(() => setErr('')).catch((e) => setErr(errorText(e)))}>Add Mezo Testnet to your wallet</button>
-            <small className="muted">Connecting adds it too, if your wallet does not have it yet.</small>
+            <small className="muted">Connecting adds it too, if your wallet does not have it yet. No wallet? <a href="#demo">Watch a real loan</a>.</small>
           </>
         )}
       </div>
@@ -180,6 +180,7 @@ function OpenInWallet() {
       <a className="btn" href={metamask}>Open in MetaMask</a>
       <button className="btn ghost" onClick={copy}>{copied ? 'Link copied' : 'Copy link for another wallet'}</button>
       <small className="muted">In another wallet app, paste the link into its browser tab. Then get testnet BTC from the <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Mezo faucet</a>.</small>
+      <a className="small-link" href="#demo">Or watch a real loan without a wallet</a>
     </div>
   )
 }

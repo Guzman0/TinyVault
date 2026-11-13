@@ -237,3 +237,17 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 .net-switch i { background: #d08a1e; }
 .net-switch:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .link-btn { display: block; justify-self: start; background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--accent-ink, #a85400); text-decoration: underline; cursor: pointer; margin: 2px 0 4px; }
+
+/* watch a real loan */
+.demo .connect-row { margin-top: 6px; }
+.demo-steps { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 2px; }
+.demo-steps li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--line); color: var(--muted); }
+.demo-steps li.running, .demo-steps li.done { color: var(--ink); }
+.demo-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); }
+.demo-steps li.running .demo-dot { border-color: var(--accent); animation: demo-pulse 1s ease-in-out infinite; }
+.demo-steps li.done .demo-dot { background: var(--good); border-color: var(--good); }
+.demo-steps li.failed .demo-dot { background: var(--bad); border-color: var(--bad); }
+.demo-meta { font-size: 13px; color: var(--muted); white-space: nowrap; }
+@keyframes demo-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .demo-steps li.running .demo-dot { animation: none; } }
+@media (max-width: 640px) { .demo-steps li { grid-template-columns: 14px minmax(0, 1fr); } .demo-meta { grid-column: 2; white-space: normal; } }

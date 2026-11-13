@@ -1,5 +1,6 @@
 import { useApp } from '../state'
 import { sharedClosePrice } from '../lib/data'
+import { DEMO_ADDRESS } from '../lib/demo'
 import { closeAccount } from '../lib/actions'
 import { explorerAddress } from '../lib/chain'
 import { fmtBtc, fmtMusd, fmtRatio, fmtUsd, shortAddr, toNum } from '../lib/format'
@@ -30,6 +31,7 @@ export function Accounts() {
                 <a href={explorerAddress(a.address)} target="_blank" rel="noreferrer" className="mono">{shortAddr(a.address)}</a>
                 {a.address.toLowerCase() === vault.anchor.toLowerCase() && <span className="tag">Anchor</span>}
                 {account && a.address.toLowerCase() === account.toLowerCase() && <span className="tag you">You</span>}
+                {a.address.toLowerCase() === DEMO_ADDRESS.toLowerCase() && <span className="tag">Demo</span>}
               </span>
               <span className="mono">{fmtBtc(a.coll)}</span>
               <span className="mono">{fmtMusd(a.debt)}</span>

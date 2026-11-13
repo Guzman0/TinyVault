@@ -9,7 +9,9 @@ const v = { address: ADDR.vault, abi: vaultAbi, chain: mezoTestnet } as const
 
 async function send(wallet: WalletClient, account: Address, step: Step, label: string, req: Parameters<WalletClient['writeContract']>[0]) {
   step(`Confirm in your wallet: ${label}`)
-  const hash = await wallet.writeContract({ ...req, account } as Parameters<WalletClient['writeContract']>[0])
+  // A wallet that signs in the page (the demo) passes its own account; a browser wallet signs by address.
+  const signer = wallet.account?.type === 'local' ? wallet.account : account
+  const hash = await wallet.writeContract({ ...req, account: signer } as Parameters<WalletClient['writeContract']>[0])
   step('Waiting for Mezo to confirm')
   await waitFor(hash)
   return hash

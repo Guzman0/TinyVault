@@ -1,5 +1,6 @@
 import { useApp } from '../state'
 import { sharedClosePrice } from '../lib/data'
+import { DEMO_ADDRESS } from '../lib/demo'
 import { closeTrove, shutdown } from '../lib/actions'
 import { explorerTx } from '../lib/chain'
 import { fmtNum, fmtUsd, shortAddr, toNum } from '../lib/format'
@@ -82,7 +83,7 @@ export function WindDown() {
 export function ActivityFeed() {
   const { activity, vault, account } = useApp()
   if (!vault) return null
-  const who = (a: string) => account && a.toLowerCase() === account.toLowerCase() ? 'You' : a.toLowerCase() === vault.anchor.toLowerCase() ? 'Anchor' : shortAddr(a as `0x${string}`)
+  const who = (a: string) => account && a.toLowerCase() === account.toLowerCase() ? 'You' : a.toLowerCase() === vault.anchor.toLowerCase() ? 'Anchor' : a.toLowerCase() === DEMO_ADDRESS.toLowerCase() ? 'Demo' : shortAddr(a as `0x${string}`)
   const people = new Set(activity.filter((a) => a.kind !== 'redeem' && a.kind !== 'redistribute' && a.kind !== 'shutdown' && a.kind !== 'wound').map((a) => a.account.toLowerCase()))
   return (
     <section className="panel">

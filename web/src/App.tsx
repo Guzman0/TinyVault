@@ -4,6 +4,7 @@ import { AccountPanel } from './components/AccountPanel'
 import { VaultPanel } from './components/VaultPanel'
 import { Accounts } from './components/Accounts'
 import { ActivityFeed, StatusBanner } from './components/Status'
+import { Demo } from './components/Demo'
 import { addMezo, explorerAddress, hasWallet, onMezo, onWalletChange } from './lib/chain'
 import { ADDR, OTHER_VAULT, WAVE1_VAULT } from './lib/config'
 import { errorText, fmtMusd, fmtNum, shortAddr, toNum } from './lib/format'
@@ -62,6 +63,7 @@ function Page() {
           <AccountPanel />
         </section>
 
+        <Demo />
         <VaultPanel />
         <Accounts />
         <ActivityFeed />
