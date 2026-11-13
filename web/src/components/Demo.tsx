@@ -38,7 +38,7 @@ export function Demo() {
   return (
     <section className="panel demo" id="demo">
       <div className="panel-head">
-        <h2>Watch a real loan, no wallet needed</h2>
+        <span />
         <a className="small-link" href={explorerAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">Demo wallet {shortAddr(DEMO_ADDRESS)}</a>
       </div>
       <p className="muted">

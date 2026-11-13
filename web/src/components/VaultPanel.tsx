@@ -13,12 +13,11 @@ export function VaultPanel() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>The shared Mezo loan</h2>
+        <span />
         <a className="small-link" href={explorerAddress(ADDR.vault)} target="_blank" rel="noreferrer">View on Mezo explorer</a>
       </div>
-      <p className="muted">
-        Mezo sees one loan. TinyVault keeps the ledger of who put in which BTC and who owes what.
-      </p>
+      <p className="muted">Mezo sees one loan. TinyVault keeps the ledger of whose BTC is in it.</p>
+      <ShareBar />
       <div className="stats four">
         <Stat k="BTC in the loan" v={fmtBtc(vault.troveColl)} sub={`Worth ${fmtUsd(toNum(vault.troveColl * vault.price / ONE))}`} />
         <Stat k="Owed to Mezo" v={fmtMusd(vault.troveDebt, 0)} sub="Includes Mezo's 200 MUSD gas deposit" />
@@ -31,5 +30,39 @@ export function VaultPanel() {
       </p>
       <WindDown />
     </section>
+  )
+}
+
+const SHADES = ['#F7931A', '#FBB35C', '#D97A06', '#FCCB8E', '#B86400']
+
+/** The one shared loan, split by whose BTC is in it. */
+function ShareBar() {
+  const { vault, accounts, account } = useApp()
+  if (!vault || vault.troveColl === 0n) return null
+  const rows = accounts.filter((a) => a.coll > 0n).sort((a, b) => (b.coll > a.coll ? 1 : -1))
+  const total = rows.reduce((t, a) => t + a.coll, 0n) || 1n
+  const me = account?.toLowerCase()
+  let k = 0
+  const parts = rows.map((a) => {
+    const anchor = a.address.toLowerCase() === vault.anchor.toLowerCase()
+    const you = a.address.toLowerCase() === me
+    const share = Number((a.coll * 10_000n) / total) / 100
+    const color = anchor ? 'var(--ink)' : SHADES[k++ % SHADES.length]
+    const name = anchor ? 'Anchor' : you ? 'You' : `${a.address.slice(0, 6)}…${a.address.slice(-4)}`
+    return { key: a.address, share, color, name, you, btc: a.coll }
+  })
+  return (
+    <figure className="sharebar">
+      <div className="sharebar-track" role="img" aria-label={parts.map((p) => `${p.name} ${p.share}%`).join(', ')}>
+        {parts.map((p) => (
+          <span key={p.key} className={p.you ? 'you' : ''} style={{ flexGrow: p.share, background: p.color }} title={`${p.name}: ${fmtBtc(p.btc)}`} />
+        ))}
+      </div>
+      <figcaption className="sharebar-legend">
+        {parts.map((p) => (
+          <span key={p.key}><i style={{ background: p.color }} />{p.name} <b className="mono">{p.share < 1 ? p.share.toFixed(1) : Math.round(p.share)}%</b></span>
+        ))}
+      </figcaption>
+    </figure>
   )
 }

@@ -88,8 +88,8 @@ export function ActivityFeed() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Everything that happened</h2>
-        <span className="muted small">{fmtNum(activity.length, 0)} actions · {people.size} wallets</span>
+        <span />
+        <span className="muted small">{fmtNum(activity.length, 0)} actions by {people.size} wallets</span>
       </div>
       <p className="muted">Read from the vault's events on Mezo testnet. Each line links to its transaction.</p>
       <div className="feed">

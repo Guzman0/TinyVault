@@ -13,7 +13,7 @@ export function Accounts() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Every account in the vault</h2>
+        <span />
         <span className="muted small">{rows.length} {rows.length === 1 ? 'account' : 'accounts'}</span>
       </div>
       <p className="muted">
