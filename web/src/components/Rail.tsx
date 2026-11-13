@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 export type Tone = 'paper' | 'warm' | 'ink' | 'sheet' | 'green'
-export type Glyph = 'cycle' | 'vault' | 'ledger' | 'receipt' | 'scale'
+export type Glyph = 'cycle' | 'vault' | 'ledger' | 'receipt' | 'scale' | 'flow'
 
 /** One section of the page: its own band of colour, an icon and its title. */
 export function Entry({ index, title, tone, glyph, children }: { label?: string; index: number; title?: ReactNode; tone?: Tone; glyph?: Glyph; children: ReactNode }) {
@@ -31,6 +31,13 @@ function Icon({ name }: { name: Glyph }) {
           <circle cx="20" cy="20" r="5.5" />
           <path d="M11 15a10 10 0 0 1 17-3" /><path d="M28 9v3.5h-3.5" />
           <path d="M29 25a10 10 0 0 1-17 3" /><path d="M12 31v-3.5h3.5" />
+        </g>
+      )}
+      {name === 'flow' && (
+        <g {...p}>
+          <circle cx="10.5" cy="13" r="3" /><circle cx="10.5" cy="27" r="3" />
+          <rect x="24" y="14" width="9" height="12" rx="3" />
+          <path d="M13.5 13.5l10 4M13.5 26.5l10-4" />
         </g>
       )}
       {name === 'vault' && (

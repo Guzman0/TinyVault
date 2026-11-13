@@ -5,6 +5,7 @@ import { VaultPanel } from './components/VaultPanel'
 import { Accounts } from './components/Accounts'
 import { ActivityFeed, StatusBanner } from './components/Status'
 import { Demo } from './components/Demo'
+import { HowItWorks } from './components/HowItWorks'
 import { Entry } from './components/Rail'
 import { Journey, FollowBar } from './components/Journey'
 import { addMezo, explorerAddress, hasWallet, onMezo, onWalletChange } from './lib/chain'
@@ -60,10 +61,11 @@ function Page() {
         </section>
         </Entry>
 
+        <Entry index={6} tone="sheet" glyph="flow" title="How it works"><HowItWorks /></Entry>
         <Entry index={1} tone="warm" glyph="cycle" title="Watch a real loan, no wallet needed"><Demo /></Entry>
         <Entry index={2} tone="ink" glyph="vault" title="One Mezo loan, many owners"><VaultPanel /></Entry>
         <Entry index={3} tone="paper" glyph="ledger" title="Every account, each with its own line"><Accounts /></Entry>
-        <Entry index={4} tone="sheet" glyph="receipt" title="Everything that happened"><ActivityFeed /></Entry>
+        <Entry index={4} tone="paper" glyph="receipt" title="Everything that happened"><ActivityFeed /></Entry>
 
         <Entry index={5} tone="green" glyph="scale" title="How one shared loan stays fair">
         <section className="fair">
