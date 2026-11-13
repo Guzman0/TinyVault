@@ -86,6 +86,7 @@ export function ActivityFeed() {
   const { activity, vault, account } = useApp()
   // Lines that were not there on the last read slide in at the top with a highlight. The first
   // load fills the list quietly.
+  const [all, setAll] = useState(false)
   const seen = useRef<Set<string> | null>(null)
   const [fresh, setFresh] = useState<Set<string>>(new Set())
   useEffect(() => {
@@ -123,7 +124,7 @@ export function ActivityFeed() {
       <p className="muted">Read from the vault's events on Mezo testnet. Each line links to its transaction.</p>
       <div className="feed">
         {activity.length === 0 && <div className="empty">No activity yet</div>}
-        {rows.slice(0, 40).map((a) => (
+        {(all ? rows : rows.slice(0, 10)).map((a) => (
           <a key={a.raw} className={`feed-row${fresh.has(a.raw) ? ' fresh' : ''}`} href={explorerTx(a.hash)} target="_blank" rel="noreferrer">
             <span className={`dot k-${a.kind}`} />
             <span className={`mono${who(a.account) === 'You' ? ' you' : ''}`}>{who(a.account)}</span>
@@ -132,6 +133,11 @@ export function ActivityFeed() {
           </a>
         ))}
       </div>
+      {rows.length > 10 && (
+        <button className="feed-more" onClick={() => setAll(!all)} aria-expanded={all}>
+          {all ? 'Show less' : `Show more (${rows.length - 10} older)`}
+        </button>
+      )}
     </section>
   )
 }
