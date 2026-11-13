@@ -35,6 +35,25 @@ export async function existingAccount(): Promise<{ account: Address; wallet: Wal
   return { account: accounts[0], wallet: createWalletClient({ chain: mezoTestnet, transport: custom(p), account: accounts[0] }) }
 }
 
+/** One tap: switch the wallet to Mezo Testnet, adding the network first if the wallet lacks it. */
+export async function addMezo() {
+  const p = provider()
+  if (!p) throw new Error('No wallet found. On a computer, install MetaMask or Rabby and reload. On a phone, open this page in your wallet app\'s browser.')
+  await ensureMezo(p)
+}
+
+/** True when the wallet is on Mezo Testnet, false when on another network, null with no wallet. */
+export async function onMezo(): Promise<boolean | null> {
+  const p = provider()
+  if (!p) return null
+  try {
+    const id = (await p.request({ method: 'eth_chainId' })) as string
+    return id?.toLowerCase() === `0x${mezoTestnet.id.toString(16)}`
+  } catch {
+    return null
+  }
+}
+
 async function ensureMezo(p: Eip1193) {
   const hexId = `0x${mezoTestnet.id.toString(16)}`
   const current = (await p.request({ method: 'eth_chainId' })) as string

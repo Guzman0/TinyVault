@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppProvider, useApp } from './state'
 import { AccountPanel } from './components/AccountPanel'
 import { VaultPanel } from './components/VaultPanel'
 import { Accounts } from './components/Accounts'
 import { ActivityFeed, StatusBanner } from './components/Status'
-import { explorerAddress } from './lib/chain'
+import { addMezo, explorerAddress, hasWallet, onMezo, onWalletChange } from './lib/chain'
 import { ADDR, OTHER_VAULT, WAVE1_VAULT } from './lib/config'
 import { errorText, fmtMusd, fmtNum, shortAddr, toNum } from './lib/format'
 
@@ -24,7 +24,7 @@ function Page() {
       <header className="top">
         <div className="brand"><VaultMark />TinyVault</div>
         <div className="top-right">
-          <span className="net"><i />Mezo Testnet</span>
+          <NetworkButton onError={setErr} />
           {account ? (
             <span className="chip-addr mono">{shortAddr(account)}{balances ? ` · ${fmtNum(toNum(balances.musd), 2)} MUSD` : ''}</span>
           ) : (
@@ -94,5 +94,24 @@ function VaultMark() {
       <circle cx="13" cy="13" r="5.2" fill="none" stroke="#1B1A17" strokeWidth="2.2" />
       <path d="M13 7.8v2.4M13 15.8v2.4M7.8 13h2.4M15.8 13h2.4" stroke="#1B1A17" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
+  )
+}
+
+/**
+ * The network pill. With a wallet on Mezo Testnet it is a quiet green label; on any other network
+ * (or before the wallet has the network) it becomes a one-tap button that adds and switches.
+ */
+function NetworkButton({ onError }: { onError: (s: string) => void }) {
+  const [ok, setOk] = useState<boolean | null>(null)
+  useEffect(() => {
+    const check = () => { onMezo().then(setOk) }
+    check()
+    onWalletChange(check)
+  }, [])
+  if (!hasWallet() || ok) return <span className="net"><i />Mezo Testnet</span>
+  return (
+    <button className="net net-switch" onClick={() => addMezo().then(() => onMezo().then(setOk)).catch((e) => onError(errorText(e)))}>
+      <i />{ok === false ? 'Switch to Mezo Testnet' : 'Add Mezo Testnet'}
+    </button>
   )
 }

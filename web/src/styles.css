@@ -233,3 +233,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 .open-wallet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .open-wallet p { margin: 0; font-size: 15px; }
 .open-wallet .btn { text-align: center; text-decoration: none; }
+.net-switch { font: inherit; font-size: 13px; cursor: pointer; background: var(--warn-bg); color: #7a4f0e; border: 1px solid #ecd3a2; border-radius: 999px; padding: 6px 12px; }
+.net-switch i { background: #d08a1e; }
+.net-switch:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.link-btn { display: block; justify-self: start; background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--accent-ink, #a85400); text-decoration: underline; cursor: pointer; margin: 2px 0 4px; }

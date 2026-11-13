@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../state'
-import { hasWallet } from '../lib/chain'
+import { addMezo, hasWallet } from '../lib/chain'
 import { effectiveClosePrice, loadAccount, MEZO_MCR, sharedClosePrice } from '../lib/data'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
@@ -36,7 +36,8 @@ export function AccountPanel() {
               <a className="small-link" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Get testnet BTC</a>
             </div>
             {err && <p className="bad">{err}</p>}
-            <small className="muted">Mezo Testnet: the app adds the network to your wallet when you connect.</small>
+            <button className="link-btn" onClick={() => addMezo().then(() => setErr('')).catch((e) => setErr(errorText(e)))}>Add Mezo Testnet to your wallet</button>
+            <small className="muted">Connecting adds it too, if your wallet does not have it yet.</small>
           </>
         )}
       </div>
