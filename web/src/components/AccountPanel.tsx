@@ -383,7 +383,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
       {tab === 'borrow' && <RoomMeter asking={wei ?? undefined} />}
       {wei !== null && (
         <div className="summary">
-          {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%${preview.refi > 0n ? ` + ${fmtMusd(preview.refi, 2)} to raise the limit` : ''})`} />}
+          {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%${preview.refi > 0n ? ` + ${fmtMusd(preview.refi, 2)} to update the limit` : ''})`} />}
           {tab === 'borrow' && <Row k="To pay off in full" v={`${fmtMusd(preview.newDebt, 2)}, ${fmtMusd(preview.fees, 2)} more than you receive`} />}
           {(tab === 'borrow' || tab === 'repay') && <Row k="You will owe" v={fmtMusd(preview.newDebt)} />}
           {(tab === 'deposit' || tab === 'withdraw') && <Row k="BTC in the vault" v={fmtBtc(preview.newColl)} />}

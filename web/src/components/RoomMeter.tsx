@@ -26,14 +26,14 @@ export function RoomMeter({ asking }: { asking?: bigint }) {
       </div>
       <p className="room-line">
         {over
-          ? `Your loan is bigger than the room left, so Mezo raises the limit first. That adds a one-time fee of about ${fmtMusd(cost, 2)} to your loan.`
-          : `Loans up to ${fmtMusd(room, 0)} have no extra fee. A bigger one adds a one-time fee of about ${fmtMusd(cost, 2)}.`}
+          ? `Your loan is bigger than the room left, so Mezo first updates the limit to the BTC in the loan today. Mezo charges a one-time fee of about ${fmtMusd(cost, 2)} for that, added to your loan.`
+          : `Loans up to ${fmtMusd(room, 0)} have no extra fee. A bigger one makes Mezo update the limit, for a one-time fee of about ${fmtMusd(cost, 2)}.`}
         {' '}
         <button className="link-btn inline" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? 'Hide' : 'Why?'}</button>
       </p>
       {open && (
         <p className="room-why">
-          Everyone here borrows from one shared Mezo loan, and Mezo sets a limit on how big that loan can grow. It sets the limit from the BTC in the loan on the day it is set. When loans fill it up, the next person to borrow pays Mezo a small one-time fee to raise the limit to match all the BTC in the loan today (Mezo calls this a refinance). Nobody else pays, and nothing changes for loans already taken.
+          Everyone here borrows from one shared Mezo loan, and Mezo sets a limit on how big that loan can grow: what the BTC in it could back on the day the limit was set. Adding BTC does not move the limit by itself. When loans fill it up, Mezo works the limit out again from all the BTC in the loan today, and charges the person whose loan needs the room a small one-time fee for doing it <b>(Mezo calls this a refinance)</b>. Nobody else pays the fee. A refinance also moves the shared loan to Mezo's current interest rate, for everyone in it; today that is the same rate, so nothing changes.
         </p>
       )}
     </div>

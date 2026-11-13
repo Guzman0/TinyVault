@@ -27,7 +27,7 @@ export function VaultPanel() {
           <Stat
             k="Room left to borrow"
             v={fmtMusd(vault.troveCap > vault.mezoDebt ? vault.troveCap - vault.mezoDebt : 0n, 0)}
-            sub={`Mezo's limit for this loan is ${fmtMusd(vault.troveCap, 0)}. Past it, the next loan pays a small fee to raise it.`}
+            sub={`Mezo's limit for this loan is ${fmtMusd(vault.troveCap, 0)}. Past it, Mezo updates the limit to the BTC in the loan, for a small fee.`}
           />
         )}
       </div>
