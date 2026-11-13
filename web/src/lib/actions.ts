@@ -11,7 +11,11 @@ async function send(wallet: WalletClient, account: Address, step: Step, label: s
   step(`Confirm in your wallet: ${label}`)
   // A wallet that signs in the page (the demo) passes its own account; a browser wallet signs by address.
   const signer = wallet.account?.type === 'local' ? wallet.account : account
-  const hash = await wallet.writeContract({ ...req, account: signer } as Parameters<WalletClient['writeContract']>[0])
+  // Mezo's re-sorting of troves can cost more by the time a transaction lands than when it was
+  // estimated, so every transaction carries a 30% margin over the estimate.
+  const call = { ...req, account: signer } as Parameters<WalletClient['writeContract']>[0]
+  const est = await publicClient.estimateContractGas({ ...(call as object), account: signer } as Parameters<typeof publicClient.estimateContractGas>[0])
+  const hash = await wallet.writeContract({ ...call, gas: (est * 13n) / 10n } as Parameters<WalletClient['writeContract']>[0])
   step('Waiting for Mezo to confirm')
   await waitFor(hash)
   return hash

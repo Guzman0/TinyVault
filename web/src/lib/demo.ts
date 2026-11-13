@@ -51,14 +51,16 @@ export async function runDemo(update: (steps: DemoStep[]) => void) {
     }
   }
 
-  const { btc, musd } = await demoBalances()
-  if (btc < DEMO_BTC * 12n / 10n || musd < 10n ** 18n) {
-    throw new Error('The demo wallet needs a top-up of testnet BTC or MUSD. Try again later.')
-  }
+  // Finish any earlier run first (a closed tab, a failed step), so its BTC comes back.
   const a = DEMO_ADDRESS
   const before = await loadAccount(a)
   if (before.debt > 0n) await repay(demoWallet, a, 2n ** 255n, before.debt, () => {})
   if (before.coll > 0n) await withdraw(demoWallet, a, (await loadAccount(a)).coll, () => {})
+
+  const { btc, musd } = await demoBalances()
+  if (btc < DEMO_BTC * 12n / 10n || musd < 10n ** 17n) {
+    throw new Error('The demo wallet needs a top-up of testnet BTC or MUSD. Try again later.')
+  }
 
   await run(0, (n) => deposit(demoWallet, a, DEMO_BTC, n))
   const [p, v] = await Promise.all([loadParams(), loadVault()])
