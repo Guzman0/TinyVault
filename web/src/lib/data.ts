@@ -109,6 +109,17 @@ const refinanced = parseAbiItem('event RefinancingFeePaid(address indexed _borro
 /** Mezo's gas deposit, part of the loan's debt but not of the debt a refinance fee is charged on. */
 export const GAS_COMP = 200n * 10n ** 18n
 
+/** What a refinance would cost right now, whoever's loan triggers it. */
+export function refinanceCost(v: VaultState, mezoFeeRate: bigint): bigint {
+  const net = v.mezoDebt > GAS_COMP ? v.mezoDebt - GAS_COMP : 0n
+  return (((net * BigInt(v.refiFeePct)) / 100n) * mezoFeeRate) / 10n ** 18n
+}
+
+/** MUSD that can still be lent before the shared loan hits Mezo's cap. */
+export function roomLeft(v: VaultState): bigint {
+  return v.troveCap > v.mezoDebt ? v.troveCap - v.mezoDebt : 0n
+}
+
 /** The extra fee if a loan of `fromTrove` from Mezo would need a refinance first; 0 if it fits. */
 export function refinanceFee(v: VaultState, fromTrove: bigint, mezoFeeRate: bigint): bigint {
   if (fromTrove === 0n || v.troveCap === 0n) return 0n

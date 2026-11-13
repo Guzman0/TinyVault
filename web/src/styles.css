@@ -362,3 +362,15 @@ html, body { overflow-x: clip; }
   .entry-icon { width: 36px; height: 36px; }
   .entry-title { gap: 10px; }
 }
+
+/* room left in the shared loan, next to every borrow */
+.room { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 4px 0 12px; display: grid; gap: 8px; }
+.room.over { background: var(--warn-bg); border-color: #ecd3a2; }
+.room-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; color: var(--muted); }
+.room-head b { font-size: 15px; color: var(--ink); }
+.room-bar { height: 8px; border-radius: 999px; background: #dfe7da; overflow: hidden; }
+.room-bar span { display: block; height: 100%; border-radius: 999px; background: var(--ink); }
+.room.over .room-bar span { background: var(--accent); }
+.room-line, .room-why { margin: 0; font-size: 13px; line-height: 1.5; color: #3e4a42; }
+.room-why { color: var(--muted); }
+.link-btn.inline { display: inline; font-size: 13px; margin: 0; }

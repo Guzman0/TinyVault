@@ -25,9 +25,9 @@ export function VaultPanel() {
         <Stat k="Reserve" v={fmtMusd(vault.reserve)} sub="Pays first if an account falls short" />
         {vault.troveCap > 0n && !vault.closed && (
           <Stat
-            k="Room before a refinance"
+            k="Room left to borrow"
             v={fmtMusd(vault.troveCap > vault.mezoDebt ? vault.troveCap - vault.mezoDebt : 0n, 0)}
-            sub={`Mezo capped the loan at ${fmtMusd(vault.troveCap, 0)}. The next loan past it refinances.`}
+            sub={`Mezo's limit for this loan is ${fmtMusd(vault.troveCap, 0)}. Past it, the next loan pays a small fee to raise it.`}
           />
         )}
       </div>

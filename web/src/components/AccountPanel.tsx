@@ -6,6 +6,7 @@ import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
 import { CloseAlert, NotifyToggle } from './CloseAlert'
+import { RoomMeter } from './RoomMeter'
 import { OTHER_VAULT } from '../lib/config'
 
 export type Tab = 'deposit' | 'borrow' | 'repay' | 'withdraw'
@@ -227,6 +228,7 @@ function Calculator() {
         </div>
       )}
       {tooSmall && wei > 0n && <small className="muted">The smallest loan is {fmtNum(toNum(params.minBorrow), 0)} MUSD, so a safe one needs about {fmtBtc(params.minBorrow * feeK / ONE * FIRST_RATIO / vault.price)}.</small>}
+      <RoomMeter />
       <small className="muted">On Mezo directly, the smallest loan needs about ${fmtNum(toNum(vault.minNetDebt * 11n / 10n * params.openRatio / ONE), 0)} of BTC.</small>
     </div>
   )
@@ -270,6 +272,7 @@ function FirstLoan({ onDone }: { onDone: (s: string) => void }) {
           <span className="unit">MUSD</span>
         </div>
       </label>
+      <RoomMeter asking={wei ?? undefined} />
       {plan && !tooLow && (
         <div className="summary">
           <Row k="You add" v={`${fmtBtc(plan.coll)} (${fmtUsd(toNum(plan.coll * v.price / ONE))})`} />
@@ -377,10 +380,10 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
         </small>
       </label>
 
+      {tab === 'borrow' && <RoomMeter asking={wei ?? undefined} />}
       {wei !== null && (
         <div className="summary">
-          {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%${preview.refi > 0n ? ' + refinance' : ''})`} />}
-          {tab === 'borrow' && preview.refi > 0n && <Row k="Mezo refinance" v={`needed: this loan is bigger than the room left (${fmtMusd(v.troveCap > v.mezoDebt ? v.troveCap - v.mezoDebt : 0n, 0)}), so the vault refinances first, fee about ${fmtMusd(preview.refi, 2)}`} />}
+          {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%${preview.refi > 0n ? ` + ${fmtMusd(preview.refi, 2)} to raise the limit` : ''})`} />}
           {tab === 'borrow' && <Row k="To pay off in full" v={`${fmtMusd(preview.newDebt, 2)}, ${fmtMusd(preview.fees, 2)} more than you receive`} />}
           {(tab === 'borrow' || tab === 'repay') && <Row k="You will owe" v={fmtMusd(preview.newDebt)} />}
           {(tab === 'deposit' || tab === 'withdraw') && <Row k="BTC in the vault" v={fmtBtc(preview.newColl)} />}
