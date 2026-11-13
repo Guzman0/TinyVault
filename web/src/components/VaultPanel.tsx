@@ -18,11 +18,18 @@ export function VaultPanel() {
       </div>
       <p className="muted">Mezo sees one loan. TinyVault keeps the ledger of whose BTC is in it.</p>
       <ShareBar />
-      <div className="stats four">
+      <div className="stats five">
         <Stat k="BTC in the loan" v={fmtBtc(vault.troveColl)} sub={`Worth ${fmtUsd(toNum(vault.troveColl * vault.price / ONE))}`} />
         <Stat k="Owed to Mezo" v={fmtMusd(vault.troveDebt, 0)} sub="Includes Mezo's 200 MUSD gas deposit" />
         <Stat k="Ratio Mezo sees" v={vault.closed ? 'Closed' : fmtRatio(vault.ratio)} sub={vault.closed ? "Mezo's line is 110%" : `Mezo's line is 110%: BTC at ${fmtUsd(toNum(sharedClosePrice(vault)))}`} />
         <Stat k="Reserve" v={fmtMusd(vault.reserve)} sub="Pays first if an account falls short" />
+        {vault.troveCap > 0n && !vault.closed && (
+          <Stat
+            k="Room before a refinance"
+            v={fmtMusd(vault.troveCap > vault.mezoDebt ? vault.troveCap - vault.mezoDebt : 0n, 0)}
+            sub={`Mezo capped the loan at ${fmtMusd(vault.troveCap, 0)}. The next loan past it refinances.`}
+          />
+        )}
       </div>
       <p className="footnote">
         BTC {fmtUsd(toNum(vault.price))} from Mezo's price feed. Mezo's minimum loan is {fmtMusd(vault.minNetDebt, 0)}, read live from its contract.

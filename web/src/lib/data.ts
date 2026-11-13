@@ -31,6 +31,12 @@ export interface VaultState {
   woundDown: boolean
   recoveryMode: boolean
   totalShares: bigint
+  /** Mezo's cap on the shared loan's debt, set when it opened and reset only by a refinance. */
+  troveCap: bigint
+  /** The shared loan's debt as Mezo counts it against that cap: principal plus interest. */
+  mezoDebt: bigint
+  /** A refinance costs this share (%) of the borrowing fee on the loan's net debt. */
+  refiFeePct: number
 }
 
 export interface AccountState {
@@ -68,7 +74,12 @@ export async function loadVault(): Promise<VaultState> {
     publicClient.readContract({ ...v, functionName: 'recoveryMode' }).catch(() => false),
     publicClient.readContract({ ...v, functionName: 'totalShares' }),
   ])
-  return { ...s, owner, shutdownAt, forcedFrom: shutdownAt === 0n ? 0n : shutdownAt + grace, woundDown, recoveryMode, totalShares }
+  const [troveCap, mezoDebt, refiFeePct] = await Promise.all([
+    publicClient.readContract({ address: ADDR.troveManager, abi: mezoAbi, functionName: 'getTroveMaxBorrowingCapacity', args: [ADDR.vault] }).catch(() => 0n),
+    publicClient.readContract({ address: ADDR.troveManager, abi: mezoAbi, functionName: 'getTroveDebt', args: [ADDR.vault] }).catch(() => 0n),
+    publicClient.readContract({ address: ADDR.borrowerOps, abi: mezoAbi, functionName: 'refinancingFeePercentage' }).catch(() => 20),
+  ])
+  return { ...s, owner, shutdownAt, forcedFrom: shutdownAt === 0n ? 0n : shutdownAt + grace, woundDown, recoveryMode, totalShares, troveCap, mezoDebt, refiFeePct: Number(refiFeePct) }
 }
 
 export async function loadAccount(address: Address): Promise<AccountState> {
@@ -86,6 +97,25 @@ export async function loadWallet(address: Address) {
     publicClient.readContract({ address: ADDR.musd, abi: erc20Abi, functionName: 'allowance', args: [address, ADDR.vault] }),
   ])
   return { btc, musd, allowance }
+}
+
+const mezoAbi = [
+  parseAbiItem('function getTroveMaxBorrowingCapacity(address) view returns (uint256)'),
+  parseAbiItem('function getTroveDebt(address) view returns (uint256)'),
+  parseAbiItem('function refinancingFeePercentage() view returns (uint8)'),
+] as const
+const refinanced = parseAbiItem('event RefinancingFeePaid(address indexed _borrower, uint256 _fee)')
+
+/** Mezo's gas deposit, part of the loan's debt but not of the debt a refinance fee is charged on. */
+export const GAS_COMP = 200n * 10n ** 18n
+
+/** The extra fee if a loan of `fromTrove` from Mezo would need a refinance first; 0 if it fits. */
+export function refinanceFee(v: VaultState, fromTrove: bigint, mezoFeeRate: bigint): bigint {
+  if (fromTrove === 0n || v.troveCap === 0n) return 0n
+  const change = fromTrove + (fromTrove * mezoFeeRate) / 10n ** 18n
+  if (v.mezoDebt + change <= v.troveCap) return 0n
+  const net = v.mezoDebt > GAS_COMP ? v.mezoDebt - GAS_COMP : 0n
+  return (((net * BigInt(v.refiFeePct)) / 100n) * mezoFeeRate) / 10n ** 18n || 1n
 }
 
 const STEP = 10_000n // Mezo's RPC answers log queries over at most 10,000 blocks
@@ -158,6 +188,10 @@ export async function loadActivity(): Promise<Activity[]> {
         case 'MusdClaimed': item = ['claim', a.account, `claimed ${fmt(a.amount)} MUSD`]; break
       }
       if (item) out.push({ time: timeOf(l.blockNumber), kind: item[0], account: item[1], text: item[2], hash: l.transactionHash, block: l.blockNumber })
+    }
+    const refis = await publicClient.getLogs({ address: ADDR.borrowerOps, event: refinanced, args: { _borrower: ADDR.vault }, fromBlock, toBlock }).catch(() => [])
+    for (const l of refis) {
+      out.push({ time: timeOf(l.blockNumber), kind: 'refinance', account: ADDR.vault, text: `the vault refinanced the shared loan with Mezo for more room to lend (fee ${fmt(l.args._fee ?? 0n, 2)} MUSD)`, hash: l.transactionHash, block: l.blockNumber })
     }
   }))
   return out.sort((x, y) => (x.block > y.block ? -1 : 1))

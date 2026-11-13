@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../state'
 import { addMezo, hasWallet } from '../lib/chain'
-import { effectiveClosePrice, loadAccount, MEZO_MCR, sharedClosePrice } from '../lib/data'
+import { effectiveClosePrice, loadAccount, MEZO_MCR, refinanceFee, sharedClosePrice } from '../lib/data'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
@@ -309,14 +309,18 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
     const coll = m.coll
     const debt = m.debt
     const w = wei ?? 0n
-    let newColl = coll, newDebt = debt, fees = 0n
+    let newColl = coll, newDebt = debt, fees = 0n, refi = 0n
     if (tab === 'deposit') newColl = coll + w
     if (tab === 'withdraw') newColl = coll > w ? coll - w : 0n
     if (tab === 'repay') newDebt = debt > w ? debt - w : 0n
     if (tab === 'borrow') {
       const reserveFee = w * BigInt(p.reserveFeeBps) / 10_000n
       const mezoFee = (w + reserveFee) * p.mezoFeeRate / ONE
-      fees = reserveFee + mezoFee
+      // If this loan needs more room than Mezo left the shared loan, the vault refinances first,
+      // and this borrower pays that fee too.
+      const need = w + reserveFee
+      refi = refinanceFee(v, need > v.idle ? need - v.idle : 0n, p.mezoFeeRate)
+      fees = reserveFee + mezoFee + refi
       newDebt = debt + w + fees
     }
     const ratio = newDebt === 0n ? null : Number(newColl * price / newDebt) / 1e18
@@ -328,7 +332,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
     const own = newDebt === 0n || newColl === 0n ? null : toNum(newDebt * p.closeRatio / newColl)
     const isAnchor = !!account && account.toLowerCase() === v.anchor.toLowerCase()
     const closeAt = own === null ? null : isAnchor ? shared : Math.max(own, shared)
-    return { newColl, newDebt, fees, ratio, closeAt }
+    return { newColl, newDebt, fees, ratio, closeAt, refi }
   }, [tab, wei, m, p, price, v, account])
 
   const max = useMemo(() => {
@@ -375,7 +379,8 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
 
       {wei !== null && (
         <div className="summary">
-          {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%)`} />}
+          {tab === 'borrow' && <Row k="Fees" v={`${fmtMusd(preview.fees, 3)} (0.5% reserve + Mezo's 0.1%${preview.refi > 0n ? ' + refinance' : ''})`} />}
+          {tab === 'borrow' && preview.refi > 0n && <Row k="Mezo refinance" v={`needed: this loan is bigger than the room left (${fmtMusd(v.troveCap > v.mezoDebt ? v.troveCap - v.mezoDebt : 0n, 0)}), so the vault refinances first, fee about ${fmtMusd(preview.refi, 2)}`} />}
           {tab === 'borrow' && <Row k="To pay off in full" v={`${fmtMusd(preview.newDebt, 2)}, ${fmtMusd(preview.fees, 2)} more than you receive`} />}
           {(tab === 'borrow' || tab === 'repay') && <Row k="You will owe" v={fmtMusd(preview.newDebt)} />}
           {(tab === 'deposit' || tab === 'withdraw') && <Row k="BTC in the vault" v={fmtBtc(preview.newColl)} />}

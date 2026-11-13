@@ -108,6 +108,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
 .stats.four { grid-template-columns: repeat(4, 1fr); margin-top: 14px; }
+.stats.five { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 14px; }
 .stat { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; }
 .stat-k { font-size: 13px; color: var(--muted); }
 .stat-v { font-family: var(--mono); font-weight: 600; font-size: 17px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -156,7 +157,7 @@ h1, h2, h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
   .hero { grid-template-columns: minmax(0, 1fr); }
   .hero > * { min-width: 0; }
   .cards { grid-template-columns: 1fr 1fr; }
-  .stats.four { grid-template-columns: 1fr 1fr; }
+  .stats.four, .stats.five { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 640px) {
   .wrap { padding: 0 16px 40px; }
