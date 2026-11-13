@@ -5,7 +5,8 @@ import { VaultPanel } from './components/VaultPanel'
 import { Accounts } from './components/Accounts'
 import { ActivityFeed, StatusBanner } from './components/Status'
 import { Demo } from './components/Demo'
-import { Entry, Rail } from './components/Rail'
+import { Entry } from './components/Rail'
+import { Journey, FollowBar } from './components/Journey'
 import { addMezo, explorerAddress, hasWallet, onMezo, onWalletChange } from './lib/chain'
 import { ADDR, OTHER_VAULT, WAVE1_VAULT } from './lib/config'
 import { errorText, fmtMusd, fmtNum, shortAddr, toNum } from './lib/format'
@@ -44,7 +45,6 @@ function Page() {
       <StatusBanner />
 
       <main>
-        <Rail>
         <Entry index={0} label="Borrow">
         <section className="hero">
           <div className="hero-copy">
@@ -54,11 +54,7 @@ function Page() {
               TinyVault shares one Mezo loan between many people, so you can borrow from {params ? fmtNum(toNum(params.minBorrow), 0) : '10'} MUSD with the BTC you have, and keep your Bitcoin.
             </p>
             <MinimumPicture min={vault ? toNum(vault.minNetDebt) : 1800} here={params ? toNum(params.minBorrow) : 10} />
-            <ol className="steps">
-              <li><b>Add BTC.</b> It goes into the shared Mezo loan, recorded under your name.</li>
-              <li><b>Borrow MUSD</b> up to two thirds of its value. Your limit is yours alone.</li>
-              <li><b>Repay any time</b> and take your BTC back.</li>
-            </ol>
+            <Journey />
           </div>
           <AccountPanel />
         </section>
@@ -79,8 +75,8 @@ function Page() {
           </div>
         </section>
         </Entry>
-        </Rail>
       </main>
+      <FollowBar />
 
       <footer className="foot">
         <span>Built on Mezo testnet. Loans in MUSD, Mezo's Bitcoin-backed dollar.</span>

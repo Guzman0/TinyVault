@@ -8,7 +8,7 @@ import { Gauge, Stat, TxButton } from './ui'
 import { CloseAlert, NotifyToggle } from './CloseAlert'
 import { OTHER_VAULT } from '../lib/config'
 
-type Tab = 'deposit' | 'borrow' | 'repay' | 'withdraw'
+export type Tab = 'deposit' | 'borrow' | 'repay' | 'withdraw'
 const ONE = 10n ** 18n
 
 export function AccountPanel() {
@@ -21,10 +21,16 @@ export function AccountPanel() {
   const picked = useRef(false)
   const owes = !!me && me.debt > 0n
   useEffect(() => { if (owes && !picked.current) setTab('repay') }, [owes])
+  // The journey strip and the follow bar ask for a tab with a 'tinyvault:tab' event.
+  useEffect(() => {
+    const on = (e: Event) => { const t = (e as CustomEvent<Tab>).detail; picked.current = true; setTab(t); setAmount('') }
+    window.addEventListener('tinyvault:tab', on)
+    return () => window.removeEventListener('tinyvault:tab', on)
+  }, [])
 
   if (!account || !wallet) {
     return (
-      <div className="panel panel-account">
+      <div className="panel panel-account" id="account">
         <h2>Your account</h2>
         <Calculator />
         {!hasWallet() && isPhone() ? (
@@ -43,14 +49,14 @@ export function AccountPanel() {
       </div>
     )
   }
-  if (!me || !params || !vault || !balances) return <div className="panel panel-account"><p className="muted">Reading your account from Mezo testnet</p></div>
+  if (!me || !params || !vault || !balances) return <div className="panel panel-account" id="account"><p className="muted">Reading your account from Mezo testnet</p></div>
 
   const price = vault.price
   const hasDebt = me.debt > 0n
   const valueUsd = toNum(me.coll * price / ONE)
 
   return (
-    <div className="panel panel-account">
+    <div className="panel panel-account" id="account">
       <div className="panel-head">
         <h2>Your account</h2>
         <span className={`pill ${me.ratio < params.closeRatio ? 'bad' : me.ratio < params.openRatio ? 'warn' : 'good'}`}>{fmtRatio(me.ratio)}</span>
