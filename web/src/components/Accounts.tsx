@@ -3,7 +3,7 @@ import { sharedClosePrice } from '../lib/data'
 import { DEMO_ADDRESS } from '../lib/demo'
 import { closeAccount } from '../lib/actions'
 import { explorerAddress } from '../lib/chain'
-import { fmtBtc, fmtMusd, fmtRatio, fmtUsd, shortAddr, toNum } from '../lib/format'
+import { fmtBtc, fmtMusd, fmtPct, fmtRatio, fmtUsd, shortAddr, toNum } from '../lib/format'
 import { Gauge, TxButton } from './ui'
 
 export function Accounts() {
@@ -17,7 +17,7 @@ export function Accounts() {
         <span className="muted small">{rows.length} {rows.length === 1 ? 'account' : 'accounts'}</span>
       </div>
       <p className="muted">
-        Each account closes at the first of two prices: its own 125% line, or the price where Mezo closes the whole shared loan ({fmtUsd(toNum(sharedClosePrice(vault)))}). Below {Math.round(toNum(params.closeRatio) * 100)}% anyone can close an account: they pay its debt and receive its BTC worth the debt plus {Math.round(toNum(params.closeBonus) * 100)}%. The rest stays with the owner, and no other account is touched.
+        Each account closes at the first of two prices: its own {fmtPct(params.closeRatio)} line, or the price where Mezo closes the whole shared loan ({fmtUsd(toNum(sharedClosePrice(vault)))}). Below {Math.round(toNum(params.closeRatio) * 100)}% anyone can close an account: they pay its debt and receive its BTC worth the debt plus {Math.round(toNum(params.closeBonus) * 100)}%. The rest stays with the owner, and no other account is touched.
       </p>
       <div className="table">
         <div className="tr th"><span>Account</span><span>BTC</span><span>Owes</span><span>Health</span><span /></div>

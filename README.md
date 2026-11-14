@@ -72,6 +72,16 @@ FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contr
 
 It runs every 15 minutes on GitHub Actions ([`.github/workflows/keeper.yml`](.github/workflows/keeper.yml)); each run's output is in the workflow summary. With no `KEEPER_PRIVATE_KEY` secret it reports what it would close; with one it sends the closes.
 
+## Stress-test vault
+
+A keeper close and a Mezo redemption need a price drop or a redeemer, which testnet rarely supplies. So a second vault runs the same contract with tight settings: borrow up to 116.5%, closed below 115%, and its shared loan opened at about 116.5%, the low end of Mezo's sorted list.
+
+- **Keeper close.** A loan at the limit is closed after a fall in BTC of about 1.3%, which testnet's live price moves through within hours. The keeper workflow scans this vault too.
+- **Refinance.** The shared loan opens with about 90 MUSD of room, so a few small loans use it up and the next one makes the vault refinance with Mezo.
+- **Redemption.** The loan is first in Mezo's redemption line, so a small redemption lands here. The app's "Redeem MUSD with Mezo" section calls Mezo's `redeemCollateral` with hints, then `sync()`, so the split by debt shows in the activity feed at once. The anchor carries 1,850 MUSD, 50 above Mezo's minimum, so up to 50 MUSD can be redeemed.
+
+Open it with [`?vault=stress`](https://guzman0.github.io/TinyVault/?vault=stress). Deploy one with [`deploy.html?preset=stress`](https://guzman0.github.io/TinyVault/deploy.html?preset=stress). Rehearsed on a fork of Mezo testnet: a 40 MUSD redemption took BTC from the vault, a loan past the room refinanced it, and after a 2% price fall the keeper closed both borrowers while the anchor stayed. Mezo closes this loan below 110%, about 5.5% under the price it opens at, so it is for small test amounts only.
+
 ## Who funds the anchor
 
 On testnet, Guzman funds it: 0.05 BTC against Mezo's 1,800 MUSD minimum, at about 186%. On mainnet a backer does the same at 250% or more: Mezo, a partner or a treasury. Its cost is Mezo's interest on about 2,000 MUSD of anchor debt (at today's 1%, about 20 MUSD a year), and it keeps the MUSD it borrowed. The 0.5% fee on each loan covers that after about 4,000 MUSD of loans a year, 40 people borrowing 100 MUSD. Past that, fees fill the reserve and then pay the backer. The wind-down lets the backer exit with all its BTC, and closers earn 5% of each close, so keepers pay for themselves.

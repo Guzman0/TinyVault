@@ -1,4 +1,4 @@
-import { erc20Abi, maxUint256, type Address, type WalletClient } from 'viem'
+import { erc20Abi, maxUint256, parseAbi, type Address, type WalletClient } from 'viem'
 import { publicClient, waitFor } from './chain'
 import { ADDR, mezoTestnet } from './config'
 import { hintsFor } from './hints'
@@ -25,7 +25,9 @@ async function send(wallet: WalletClient, account: Address, step: Step, label: s
   }
   let hash: `0x${string}`
   try {
-    hash = await wallet.writeContract({ ...call, gas: (est * 13n) / 10n } as Parameters<WalletClient['writeContract']>[0])
+    // Mezo testnet blocks hold 10M gas; a margin past that would make the transaction unsendable.
+    const gas = (est * 13n) / 10n > 9_800_000n ? (est > 9_800_000n ? est : 9_800_000n) : (est * 13n) / 10n
+    hash = await wallet.writeContract({ ...call, gas } as Parameters<WalletClient['writeContract']>[0])
   } catch (e) {
     // Mezo accepted this a moment ago, so a "reverted" now comes from the wallet's own check, not
     // from the chain. Some wallets (MetaMask mobile among them) refuse Mezo transactions this way.
@@ -93,4 +95,43 @@ export async function closeAccount(w: WalletClient, a: Address, target: Address,
   await ensureAllowance(w, a, debt + debt / 100n, step)
   const [up, low] = await hintsFor(-seize, -debt)
   return send(w, a, step, 'close the account', { ...v, functionName: 'closeAccount', args: [target, up, low] } as never)
+}
+
+const redeemAbi = parseAbi([
+  'function getRedemptionHints(uint256 amount, uint256 price, uint256 maxIterations) view returns (address firstHint, uint256 partialNICR, uint256 truncatedAmount)',
+  'function findInsertPosition(uint256 nicr, address prevId, address nextId) view returns (address, address)',
+  'function getPrev(address) view returns (address)',
+  'function getNext(address) view returns (address)',
+  'function getLast() view returns (address)',
+  'function redeemCollateral(uint256 amount, address firstHint, address upperPartialHint, address lowerPartialHint, uint256 partialNICR, uint256 maxIterations)',
+])
+
+/** Whether a Mezo redemption right now would start at this vault's trove. */
+export async function firstInRedemptionLine() {
+  const last = await publicClient.readContract({ address: ADDR.sortedTroves, abi: redeemAbi, functionName: 'getLast' })
+  return last.toLowerCase() === ADDR.vault.toLowerCase()
+}
+
+/**
+ * A Mezo redemption: swap MUSD for BTC at face value, less Mezo's fee, from the riskiest troves on
+ * Mezo first. It is Mezo's own function, open to anyone. Then sync the vault, so the ledger splits
+ * the BTC taken by debt and records it at once.
+ */
+export async function redeem(w: WalletClient, a: Address, amount: bigint, price: bigint, step: Step) {
+  step('Finding where the redemption stops')
+  const [first, nicr, truncated] = await publicClient.readContract({ address: ADDR.hintHelpers, abi: redeemAbi, functionName: 'getRedemptionHints', args: [amount, price, 0n] })
+  if (truncated === 0n) throw new Error('Mezo cannot redeem this amount now: it would leave a loan below its 1,800 MUSD minimum. Try a smaller amount.')
+  const [prev, next] = await Promise.all([
+    publicClient.readContract({ address: ADDR.sortedTroves, abi: redeemAbi, functionName: 'getPrev', args: [ADDR.vault] }),
+    publicClient.readContract({ address: ADDR.sortedTroves, abi: redeemAbi, functionName: 'getNext', args: [ADDR.vault] }),
+  ])
+  let [up, low] = await publicClient.readContract({ address: ADDR.sortedTroves, abi: redeemAbi, functionName: 'findInsertPosition', args: [nicr, prev, next] })
+  const me = ADDR.vault.toLowerCase()
+  if (up.toLowerCase() === me) up = prev
+  if (low.toLowerCase() === me) low = next
+  const hash = await send(w, a, step, `redeem ${(Number(truncated) / 1e18).toFixed(2)} MUSD with Mezo`, {
+    address: ADDR.troveManager, abi: redeemAbi, functionName: 'redeemCollateral', args: [truncated, first, up, low, nicr, 0n], chain: mezoTestnet,
+  } as never)
+  await send(w, a, step, 'record it in the vault (sync)', { ...v, functionName: 'sync', args: [] } as never)
+  return hash
 }

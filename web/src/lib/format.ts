@@ -20,6 +20,12 @@ export function fmtUsd(n: number) {
 }
 
 /** A ratio in 1e18 (1e18 = 100%). */
+/** A settings ratio, to one decimal when it is not whole: 150%, 116.5%. */
+export function fmtPct(r: bigint) {
+  const n = Math.round(toNum(r) * 1000) / 10
+  return `${n}%`
+}
+
 export function fmtRatio(r: bigint) {
   if (r >= 10n ** 30n) return 'No debt'
   return `${Math.round(toNum(r) * 100)}%`

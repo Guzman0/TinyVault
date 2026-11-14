@@ -24,7 +24,7 @@ function useStage(): Stage {
 const STEPS: { name: string; tab?: Tab; what: string }[] = [
   { name: 'Connect', what: 'Your wallet on Mezo Testnet' },
   { name: 'Add BTC', tab: 'deposit', what: 'It stays yours, in the shared loan' },
-  { name: 'Borrow', tab: 'borrow', what: 'From 10 MUSD, up to two thirds of its value' },
+  { name: 'Borrow', tab: 'borrow', what: 'From 10 MUSD, up to your own limit' },
   { name: 'Repay', tab: 'repay', what: 'Any time, all or part' },
   { name: 'Take BTC back', tab: 'withdraw', what: 'Once nothing is owed' },
 ]

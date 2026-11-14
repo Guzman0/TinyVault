@@ -9,7 +9,8 @@ import { HowItWorks } from './components/HowItWorks'
 import { Entry } from './components/Rail'
 import { Journey, FollowBar } from './components/Journey'
 import { addMezo, explorerAddress, hasWallet, onMezo, onWalletChange } from './lib/chain'
-import { ADDR, OTHER_VAULT, WAVE1_VAULT } from './lib/config'
+import { ADDR, IS_STRESS, OTHER_VAULT, STRESS_VAULT, WAVE1_VAULT } from './lib/config'
+import { Redeem } from './components/Redeem'
 import { errorText, fmtMusd, fmtNum, shortAddr, toNum } from './lib/format'
 
 export default function App() {
@@ -43,6 +44,13 @@ function Page() {
           You are looking at {ADDR.vault.toLowerCase() === WAVE1_VAULT.toLowerCase() ? 'the Wave 1 vault' : 'another vault'}, {ADDR.vault.slice(0, 6)}…{ADDR.vault.slice(-4)}. It has no wind-down, so repay and withdraw here, then use the <a href={import.meta.env.BASE_URL}>current vault</a>.
         </div>
       )}
+      {IS_STRESS && params && (
+        <div className="notice warn">
+          <strong>Stress-test vault.</strong> Same contract as the main vault with tight settings: borrow up to {pct(params.openRatio)}, closed below {pct(params.closeRatio)}.
+          A 2% fall in BTC closes a full loan here, and Mezo redeems this loan before most others, so keeper closes, refinances and redemptions happen within hours. Use small amounts.
+          The <a href={import.meta.env.BASE_URL}>main vault</a> is the one for real use.
+        </div>
+      )}
       <StatusBanner />
 
       <main>
@@ -64,14 +72,15 @@ function Page() {
         <Entry index={6} tone="sheet" glyph="flow" title="How it works"><HowItWorks /></Entry>
         <Entry index={1} tone="warm" glyph="cycle" title="Watch a real loan, no wallet needed"><Demo /></Entry>
         <Entry index={2} tone="ink" glyph="vault" title="One Mezo loan, many owners"><VaultPanel /></Entry>
+        {IS_STRESS && <Entry index={7} tone="warm" glyph="cycle" title="Redeem MUSD with Mezo"><Redeem /></Entry>}
         <Entry index={3} tone="paper" glyph="ledger" title="Every account, each with its own line"><Accounts /></Entry>
         <Entry index={4} tone="paper" glyph="receipt" title="Everything that happened"><ActivityFeed /></Entry>
 
         <Entry index={5} tone="green" glyph="scale" title="How one shared loan stays fair">
         <section className="fair">
           <div className="cards">
-            <div className="card"><h3>Your own limit</h3><p>Each account has its own ratio. Borrowing and withdrawing must keep it at 150% or more.</p></div>
-            <div className="card"><h3>One account closes alone</h3><p>Below 125% anyone can pay off that account and take its BTC worth the debt plus 5%. Nothing is sold on a market, and others are untouched.</p></div>
+            <div className="card"><h3>Your own limit</h3><p>Each account has its own ratio. Borrowing and withdrawing must keep it at {params ? pct(params.openRatio) : '150%'} or more.</p></div>
+            <div className="card"><h3>One account closes alone</h3><p>Below {params ? pct(params.closeRatio) : '125%'} anyone can pay off that account and take its BTC worth the debt plus {params ? pct(params.closeBonus) : '5%'}. Nothing is sold on a market, and others are untouched.</p></div>
             <div className="card"><h3>Reserve pays first</h3><p>A 0.5% fee on each loan builds a reserve. If an account's BTC falls short before it is closed, the reserve covers the gap.</p></div>
             <div className="card"><h3>Redemptions split by debt</h3><p>When Mezo redeems against the loan, BTC leaves each account in proportion to its debt, matching the debt cancelled. Nobody loses value to anyone else.</p></div>
           </div>
@@ -84,6 +93,7 @@ function Page() {
         <span>Built on Mezo testnet. Loans in MUSD, Mezo's Bitcoin-backed dollar.</span>
         <a href={explorerAddress(ADDR.vault)} target="_blank" rel="noreferrer">Vault contract</a>
         <a href="https://github.com/Guzman0/TinyVault" target="_blank" rel="noreferrer">Code</a>
+        {STRESS_VAULT && !IS_STRESS && <a href="?vault=stress">Stress-test vault</a>}
         <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Testnet faucet</a>
       </footer>
     </div>
@@ -137,4 +147,9 @@ function MinimumPicture({ min, here }: { min: number; here: number }) {
       <figcaption>Drawn to scale. Most people holding Bitcoin need something closer to the bottom bar.</figcaption>
     </figure>
   )
+}
+
+function pct(x: bigint) {
+  const n = toNum(x * 100n)
+  return `${Number.isInteger(Math.round(n * 10) / 10) ? Math.round(n) : (Math.round(n * 10) / 10)}%`
 }

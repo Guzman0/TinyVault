@@ -32,3 +32,14 @@ jobs:
         run: |
           [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
           node keeper.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Scan and close the stress-test vault
+        env:
+          PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+          # Second vault with tight settings (borrow to 116.5%, close below 115%); see README.
+          VAULT: ""
+          FROM_BLOCK: ""
+        run: |
+          [ -n "$VAULT" ] || { echo "No stress-test vault yet."; exit 0; }
+          [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
+          { echo; echo "## Stress-test vault"; } >> "$GITHUB_STEP_SUMMARY"
+          node keeper.mjs | tee -a "$GITHUB_STEP_SUMMARY"

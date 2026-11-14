@@ -3,7 +3,7 @@ import { useApp } from '../state'
 import { addMezo, hasWallet } from '../lib/chain'
 import { effectiveClosePrice, loadAccount, MEZO_MCR, refinanceFee, sharedClosePrice } from '../lib/data'
 import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
-import { fmtBtc, fmtMusd, fmtNum, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
+import { fmtBtc, fmtMusd, fmtNum, fmtPct, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
 import { CloseAlert, NotifyToggle } from './CloseAlert'
 import { RoomMeter } from './RoomMeter'
@@ -68,7 +68,7 @@ export function AccountPanel() {
         <Stat k="You owe" v={fmtMusd(me.debt)} sub={hasDebt ? `Closes if BTC falls to ${fmtUsd(toNum(effectiveClosePrice(me, vault, account)))}` : 'No loan yet'} />
         {vault.closed || vault.shutdownAt > 0n || OTHER_VAULT
           ? <Stat k="You can borrow" v="0 MUSD" sub={OTHER_VAULT ? 'Old vault: repay and withdraw only' : vault.closed ? 'The vault is closed' : 'The vault is winding down'} />
-          : <Stat k="You can borrow" v={fmtMusd(me.maxBorrow)} sub="Before fees, at the 150% limit" />}
+          : <Stat k="You can borrow" v={fmtMusd(me.maxBorrow)} sub={`Before fees, at the ${fmtPct(params.openRatio)} limit`} />}
       </div>
 
       {firstDone && <div className="notice good">{firstDone}</div>}
@@ -223,7 +223,7 @@ function Calculator() {
         <div className="summary">
           <Row k="Worth" v={fmtUsd(value)} />
           <Row k="A safe loan, at 200%" v={tooSmall ? `under ${fmtNum(toNum(params.minBorrow), 0)} MUSD` : fmtMusd(safe, 0)} />
-          <Row k="The most, at 150%" v={fmtMusd(atLimit, 0)} />
+          <Row k={`The most, at ${fmtPct(params.openRatio)}`} v={fmtMusd(atLimit, 0)} />
           <Row k="A safe loan closes if BTC falls to" v={`${fmtUsd(Math.max(closeAt, toNum(sharedClosePrice(vault))))}, ${Math.floor((1 - Math.max(closeAt, toNum(sharedClosePrice(vault))) / toNum(vault.price)) * 100)}% below today`} />
         </div>
       )}
@@ -392,7 +392,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
         </div>
       )}
       {tooLow && <p className="bad">The smallest loan is {fmtNum(toNum(p.minBorrow), 0)} MUSD.</p>}
-      {unsafe && <p className="bad">That goes below the 150% limit.</p>}
+      {unsafe && <p className="bad">That goes below the {fmtPct(p.openRatio)} limit.</p>}
       {stopped && <p className="bad">{OTHER_VAULT ? 'This is an old vault: repay and withdraw only.' : `The vault is ${v.closed ? 'closed' : 'winding down'}: no new deposits or loans.`}</p>}
       {paused && <p className="bad">Mezo is in Recovery Mode and pauses BTC withdrawals until it recovers.</p>}
       {noRepay && <p className="muted">The vault's Mezo loan is closed, so there is nothing to repay.</p>}

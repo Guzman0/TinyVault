@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useApp } from '../state'
-import { fmtBtc, fmtMusd, fmtNum, toNum } from '../lib/format'
+import { fmtBtc, fmtMusd, fmtNum, fmtPct, toNum } from '../lib/format'
 
 /**
  * The idea in one picture: many people, one ledger, one Mezo loan. BTC flows right into the
@@ -58,7 +58,7 @@ export function HowItWorks() {
       <ol className="how-points">
         <li><b>Your BTC joins one shared Mezo loan</b>, recorded under your address. It is still yours.</li>
         <li><b>You borrow up to your own limit.</b> Mezo lends to the vault, and the vault passes the MUSD to you. Fees and interest are split by what each person borrowed.</li>
-        <li><b>Each account stands alone.</b> Below 125% only that account is closed, and the rest of the vault is untouched. Repay and your BTC comes back.</li>
+        <li><b>Each account stands alone.</b> Below {params ? fmtPct(params.closeRatio) : '125%'} only that account is closed, and the rest of the vault is untouched. Repay and your BTC comes back.</li>
       </ol>
     </div>
   )

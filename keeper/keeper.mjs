@@ -109,7 +109,10 @@ async function closeOne(account, view, price, closeRatio, musd) {
 async function tick() {
   if (await read('closed')) return log('the vault\'s Mezo loan is closed; nothing to do')
   await discover()
-  const [closeRatio, state, musd] = await Promise.all([read('closeRatio'), read('vaultState'), read('musd')])
+  const [closeRatio, openRatio, state, musd] = await Promise.all([read('closeRatio'), read('openRatio'), read('vaultState'), read('musd')])
+  // Warn 15 points above the close line, or within 60% of a narrower band (the stress vault).
+  const band = (openRatio - closeRatio) * 6n / 10n
+  const warnAt = closeRatio + (band < 15n * 10n ** 16n ? band : 15n * 10n ** 16n)
   const price = state.price
   const [recovery, shutdownAt, grace] = await Promise.all([
     read('recoveryMode').catch(() => false), read('shutdownAt').catch(() => 0n), read('WIND_DOWN_GRACE').catch(() => 0n)])
@@ -131,7 +134,7 @@ async function tick() {
     const pct = fmt(v.ratio * 100n, 1)
     // Within 15 points of the close line: flagged in the public log so the owner can act first.
     if (account.toLowerCase() === state.anchor.toLowerCase() && !forced) { log(`  anchor ${account} ${pct}%  carries Mezo's minimum: goes only with the shared loan`); continue }
-    if (v.ratio >= closeRatio && !forced && v.ratio < closeRatio + 15n * 10n ** 16n) { log(`  NEAR   ${account} ${pct}%  closes at $${fmt(v.closePrice)}: repay or add BTC`); continue }
+    if (v.ratio >= closeRatio && !forced && v.ratio < warnAt) { log(`  NEAR   ${account} ${pct}%  closes at $${fmt(v.closePrice)}: repay or add BTC`); continue }
     if (v.ratio >= closeRatio && !forced) { log(`  ok     ${account} ${pct}%  closes at $${fmt(v.closePrice)}`); continue }
     found++
     log(`  CLOSE  ${account} ${pct}%  owes ${fmt(v.debt)} MUSD`)

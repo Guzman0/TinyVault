@@ -7,7 +7,9 @@ import { fmtBtc, fmtMusd, fmtUsd, toNum } from '../lib/format'
 export const WARN_MARGIN = 15n * 10n ** 16n
 
 export function warnRatio(p: Params) {
-  return p.closeRatio + WARN_MARGIN
+  // A vault with a narrow band between its limits (the stress vault) warns within 60% of the band.
+  const band = ((p.openRatio - p.closeRatio) * 6n) / 10n
+  return p.closeRatio + (band < WARN_MARGIN ? band : WARN_MARGIN)
 }
 
 /** What it takes to bring an account back to the 150% borrowing limit. */
