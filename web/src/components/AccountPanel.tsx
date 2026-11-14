@@ -347,7 +347,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
   }, [tab, b, m, p, price])
 
   const tooLow = tab === 'borrow' && wei !== null && wei < p.minBorrow
-  const stopped = (tab === 'deposit' || tab === 'borrow') && (v.shutdownAt > 0n || v.closed || OTHER_VAULT)
+  const stopped = v.troveGone || ((tab === 'deposit' || tab === 'borrow') && (v.shutdownAt > 0n || v.closed || OTHER_VAULT))
   const paused = tab === 'withdraw' && v.recoveryMode && !v.closed
   const noRepay = tab === 'repay' && v.closed
   const unsafe = preview.ratio !== null && preview.ratio < toNum(p.openRatio) && (tab === 'borrow' || tab === 'withdraw')
@@ -393,7 +393,7 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
       )}
       {tooLow && <p className="bad">The smallest loan is {fmtNum(toNum(p.minBorrow), 0)} MUSD.</p>}
       {unsafe && <p className="bad">That goes below the {fmtPct(p.openRatio)} limit.</p>}
-      {stopped && <p className="bad">{OTHER_VAULT ? 'This is an old vault: repay and withdraw only.' : `The vault is ${v.closed ? 'closed' : 'winding down'}: no new deposits or loans.`}</p>}
+      {stopped && <p className="bad">{v.troveGone ? 'Mezo has closed the shared loan. Record it in the vault (button at the top), then withdraw what is left.' : OTHER_VAULT ? 'This is an old vault: repay and withdraw only.' : `The vault is ${v.closed ? 'closed' : 'winding down'}: no new deposits or loans.`}</p>}
       {paused && <p className="bad">Mezo is in Recovery Mode and pauses BTC withdrawals until it recovers.</p>}
       {noRepay && <p className="muted">The vault's Mezo loan is closed, so there is nothing to repay.</p>}
       <TxButton

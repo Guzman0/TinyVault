@@ -16,7 +16,7 @@ export function Redeem() {
   const [first, setFirst] = useState<boolean | null>(null)
   const [amount, setAmount] = useState('20')
   useEffect(() => { firstInRedemptionLine().then(setFirst).catch(() => setFirst(null)) }, [vault?.mezoDebt])
-  if (!vault) return null
+  if (!vault || vault.closed || vault.troveGone) return null
 
   // Mezo keeps every loan at 1,800 MUSD of net debt or more, so only the part above can be redeemed.
   const net = vault.mezoDebt > GAS_COMP ? vault.mezoDebt - GAS_COMP : 0n

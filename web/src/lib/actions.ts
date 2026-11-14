@@ -91,6 +91,11 @@ export async function closeTrove(w: WalletClient, a: Address, step: Step) {
 }
 
 /** `seize`: the BTC the closer is expected to receive (debt plus the bonus, at today's price). */
+/** Records in the vault whatever Mezo changed since the last action: a redemption, or the loan's closure. */
+export async function syncVault(w: WalletClient, a: Address, step: Step) {
+  return send(w, a, step, 'record it in the vault', { ...v, functionName: 'sync', args: [] } as never)
+}
+
 export async function closeAccount(w: WalletClient, a: Address, target: Address, debt: bigint, seize: bigint, step: Step) {
   await ensureAllowance(w, a, debt + debt / 100n, step)
   const [up, low] = await hintsFor(-seize, -debt)

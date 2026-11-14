@@ -3,7 +3,7 @@ import { useApp } from '../state'
 import { sharedClosePrice } from '../lib/data'
 import { DEMO_ADDRESS } from '../lib/demo'
 import { ADDR } from '../lib/config'
-import { closeTrove, shutdown } from '../lib/actions'
+import { closeTrove, shutdown, syncVault } from '../lib/actions'
 import { explorerTx } from '../lib/chain'
 import { fmtNum, fmtUsd, shortAddr, toNum } from '../lib/format'
 import { TxButton } from './ui'
@@ -13,8 +13,19 @@ const date = (t: bigint) => new Date(Number(t) * 1000).toLocaleString(undefined,
 
 /** What state the vault is in, said plainly at the top of the page. */
 export function StatusBanner() {
-  const { vault } = useApp()
+  const { vault, wallet, account } = useApp()
   if (!vault) return null
+  if (vault.troveGone) {
+    return (
+      <div className="notice warn">
+        <strong>Mezo has closed this vault's shared loan</strong>, most likely by redeeming all of it. Every account's debt is cancelled, and each keeps the BTC left after its share of the debt was paid.
+        {' '}One transaction records this in the vault and collects that BTC from Mezo; then withdraw yours below. Anyone can send it.
+        <div style={{ marginTop: 10 }}>
+          {wallet && account ? <TxButton label="Record it in the vault" done="Recorded. Withdraw what's left below." run={(s) => syncVault(wallet, account, s)} /> : <span className="small">Connect a wallet to record it.</span>}
+        </div>
+      </div>
+    )
+  }
   if (vault.woundDown) {
     return <div className="notice good"><strong>This vault has been wound down.</strong> Its Mezo loan is repaid and closed, and all BTC is back in the vault. Withdraw yours below.</div>
   }

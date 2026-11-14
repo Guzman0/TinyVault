@@ -42,14 +42,14 @@ const $ = (id) => document.getElementById(id);
 const STRESS = new URLSearchParams(location.search).get('preset') === 'stress';
 const E18 = 10n ** 18n;
 const CFG = STRESS
-  ? { open: 1165n * E18 / 1000n, close: 115n * E18 / 100n, debt: 1850n, target: 1.165, key: 'tv-stress-vault' }
+  ? { open: 1165n * E18 / 1000n, close: 115n * E18 / 100n, debt: 1850n, target: 1.30, key: 'tv-stress-vault-2' }
   : { open: 15n * E18 / 10n, close: 125n * E18 / 100n, debt: 1800n, target: 0, key: 'tv-wave2-vault' };
 const ST = '722e4d24fd6ff8b0ac679450f3d91294607268fa', TM = 'e47c80e8c23f6b4a1ae41c34837a0599d5d16bb0';
 if (STRESS) {
   $('title').textContent = 'Deploy the stress-test vault';
   $('intro').textContent = 'Deploys a second TinyVault on Mezo testnet with tight settings, then opens its shared Mezo loan at the risky end of Mezo\'s list. A 2% fall in BTC closes a full loan here and Mezo redeems this loan first, so the whole life cycle happens within hours. Your wallet signs everything.';
   $('settings').textContent = 'borrow up to 116.5%, close below 115%, 5% closer bonus, 10 MUSD smallest loan, 0.5% reserve fee';
-  $('loanText').textContent = 'Borrows 1,850 MUSD, 50 above Mezo\'s minimum, so up to 50 MUSD can be redeemed. The BTC is filled in to put this loan just under the riskiest one on Mezo, so it is first in line for redemptions. You receive the 1,850 MUSD. Keep a little BTC for gas.';
+  $('loanText').textContent = 'Borrows 1,850 MUSD, 50 above Mezo\'s minimum, so up to 50 MUSD can be redeemed. The BTC is filled in for about 130%, clear of Mezo\'s 110% line and of the riskiest loans that redemption bots take first. You receive the 1,850 MUSD. Keep a little BTC for gas.';
 }
 const pad = (hex) => hex.replace(/^0x/, '').padStart(64, '0');
 let defaulted = false;
@@ -87,10 +87,9 @@ async function updateRatio() {
       icr = Number(BigInt(await rpc('eth_call', [{ to: '0x' + TM, data: '0xd293c710' + pad(last) + num(p) }, 'latest'])) / 10n ** 13n) / 1e3;
       if (!defaulted) {
         defaulted = true;
-        // Just under the riskiest loan, so this one is first in line; never above the 116.5% limit.
-        const firstInLine = lastNicr * owed * 0.997;
-        const atLimit = owed * CFG.target / (Number(p / 10n ** 14n) / 1e4);
-        $('btc').value = Math.min(firstInLine, atLimit).toFixed(6);
+        // About 130%: well clear of Mezo's 110% line and of the riskiest loans that redemption
+        // bots take first. Accounts are still closed one by one at their own 115% line.
+        $('btc').value = (owed * CFG.target / (Number(p / 10n ** 14n) / 1e4)).toFixed(6);
       }
     }
     const btc = parseFloat($('btc').value || '0');
@@ -101,8 +100,8 @@ async function updateRatio() {
     if (STRESS) {
       const first = btc / owed < lastNicr;
       $('line').innerHTML = 'Riskiest Mezo loan now: ' + icr.toFixed(1) + '%. ' + (first
-        ? '<span class="ok">This loan would sit below it, first in line for redemptions.</span> Mezo closes this loan below 110%: once the redemption is done, add BTC to the anchor from the app.'
-        : '<span class="bad">Put in less BTC to be first in line for redemptions.</span>');
+        ? '<span class="bad">This loan would be first in line: testnet redemption bots can take all of it within minutes.</span>'
+        : '<span class="ok">Above it, so redemption bots take other loans first.</span>');
     }
   } catch (e) {}
 }

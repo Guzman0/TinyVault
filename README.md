@@ -72,15 +72,15 @@ FOUNDRY_PROFILE=fork MEZO_RPC=https://rpc.test.mezo.org forge test --match-contr
 
 It runs every 15 minutes on GitHub Actions ([`.github/workflows/keeper.yml`](.github/workflows/keeper.yml)); each run's output is in the workflow summary. With no `KEEPER_PRIVATE_KEY` secret it reports what it would close; with one it sends the closes.
 
-## Stress-test vault
+## Stress-test vaults
 
-A keeper close and a Mezo redemption need a price drop or a redeemer, which testnet rarely supplies. So a second vault runs the same contract with tight settings: borrow up to 116.5%, closed below 115%, and its shared loan opened at about 116.5%, the low end of Mezo's sorted list.
+A keeper close and a Mezo redemption need a price drop or a redeemer, which testnet rarely supplies. So the same contract also runs with tight settings: borrow up to 116.5%, closed below 115%. Deploy one with [`deploy.html?preset=stress`](https://guzman0.github.io/TinyVault/deploy.html?preset=stress).
 
-- **Keeper close.** A loan at the limit is closed after a fall in BTC of about 1.3%, which testnet's live price moves through within hours. The keeper workflow scans this vault too.
-- **Refinance.** The shared loan opens with about 90 MUSD of room, so a few small loans use it up and the next one makes the vault refinance with Mezo.
-- **Redemption.** The loan is first in Mezo's redemption line, so a small redemption lands here. The app's "Redeem MUSD with Mezo" section calls Mezo's `redeemCollateral` with hints, then `sync()`, so the split by debt shows in the activity feed at once. The anchor carries 1,850 MUSD, 50 above Mezo's minimum, so up to 50 MUSD can be redeemed.
+**A real redemption, by someone else.** The first stress vault, [`0x1FB84dc19dd02AeACE82b1F4132000949329b657`](https://explorer.test.mezo.org/address/0x1FB84dc19dd02AeACE82b1F4132000949329b657) (source verified), opened its shared loan at 114.6%, just under the riskiest loan on testnet, to be first in Mezo's redemption line. About 20 minutes later a redemption bot that is not ours redeemed all of it in [one transaction](https://explorer.test.mezo.org/tx/0xfdbd3f162fda83dd4437b1918d39d0f4a9219621fa44c4dffc37b1b20ca43931) through several troves. Mezo cancelled the whole debt and kept the BTC left over for the vault. `sync()` claims it from Mezo, marks the vault closed and lets each account withdraw what is left after its share of the debt: the anchor keeps the 1,850 MUSD it borrowed and gets back about 0.0076 BTC, so it loses nothing beyond fees. The app shows a banner with a button that sends `sync()`, and the feed records the closure. Open it with [`?vault=0x1FB84dc19dd02AeACE82b1F4132000949329b657`](https://guzman0.github.io/TinyVault/?vault=0x1FB84dc19dd02AeACE82b1F4132000949329b657).
 
-Vault (Mezo testnet, source verified): [`0x1FB84dc19dd02AeACE82b1F4132000949329b657`](https://explorer.test.mezo.org/address/0x1FB84dc19dd02AeACE82b1F4132000949329b657). Open it with [`?vault=stress`](https://guzman0.github.io/TinyVault/?vault=stress). Deploy one with [`deploy.html?preset=stress`](https://guzman0.github.io/TinyVault/deploy.html?preset=stress). Rehearsed on a fork of Mezo testnet: a 40 MUSD redemption took BTC from the vault, a loan past the room refinanced it, and after a 2% price fall the keeper closed both borrowers while the anchor stayed. Mezo closes this loan below 110%, about 5.5% under the price it opens at, so it is for small test amounts only.
+**Keeper closes.** The second stress vault opens its shared loan at about 130%, clear of Mezo's 110% line and of the loans redemption bots take first. Each account is still closed at its own 115% line, so a loan at the limit is closed after a fall in BTC of about 1.3%, which testnet's live price moves through within hours. The keeper workflow scans it. Open it with [`?vault=stress`](https://guzman0.github.io/TinyVault/?vault=stress).
+
+The app's "Redeem MUSD with Mezo" section calls Mezo's `redeemCollateral` with hints, then `sync()`, while a stress vault is first in line. Rehearsed on a fork of Mezo testnet: a 40 MUSD redemption took BTC from the vault, a loan past the room refinanced it, and after a 2% price fall the keeper closed both borrowers while the anchor stayed.
 
 ## Who funds the anchor
 

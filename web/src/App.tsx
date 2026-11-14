@@ -47,7 +47,7 @@ function Page() {
       {IS_STRESS && params && (
         <div className="notice warn">
           <strong>Stress-test vault.</strong> Same contract as the main vault with tight settings: borrow up to {pct(params.openRatio)}, closed below {pct(params.closeRatio)}.
-          A 2% fall in BTC closes a full loan here, and Mezo redeems this loan before most others, so keeper closes, refinances and redemptions happen within hours. Use small amounts.
+          A loan at the limit is closed after a fall in BTC of about 1.3%, so keeper closes happen within hours. Use small amounts.
           The <a href={import.meta.env.BASE_URL}>main vault</a> is the one for real use.
         </div>
       )}
@@ -72,7 +72,7 @@ function Page() {
         <Entry index={6} tone="sheet" glyph="flow" title="How it works"><HowItWorks /></Entry>
         <Entry index={1} tone="warm" glyph="cycle" title="Watch a real loan, no wallet needed"><Demo /></Entry>
         <Entry index={2} tone="ink" glyph="vault" title="One Mezo loan, many owners"><VaultPanel /></Entry>
-        {IS_STRESS && <Entry index={7} tone="warm" glyph="cycle" title="Redeem MUSD with Mezo"><Redeem /></Entry>}
+        {IS_STRESS && vault && !vault.closed && !vault.troveGone && <Entry index={7} tone="warm" glyph="cycle" title="Redeem MUSD with Mezo"><Redeem /></Entry>}
         <Entry index={3} tone="paper" glyph="ledger" title="Every account, each with its own line"><Accounts /></Entry>
         <Entry index={4} tone="paper" glyph="receipt" title="Everything that happened"><ActivityFeed /></Entry>
 
