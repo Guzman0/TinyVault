@@ -30,7 +30,14 @@ const STEP = 10_000n // Mezo's RPC answers log queries over at most 10,000 block
 
 const pub = createPublicClient({ transport: http(RPC) })
 const chain = defineChain({ id: await pub.getChainId(), name: 'Mezo', nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 }, rpcUrls: { default: { http: [RPC] } } })
-const signer = process.env.PRIVATE_KEY ? privateKeyToAccount(process.env.PRIVATE_KEY) : null
+// Wallets export keys with or without 0x, and pasted secrets often carry spaces or a newline.
+const rawKey = (process.env.PRIVATE_KEY || '').trim().replace(/^0x/i, '')
+if (rawKey && !/^[0-9a-fA-F]{64}$/.test(rawKey)) {
+  console.error(`PRIVATE_KEY is not a private key: expected 64 hex characters, got ${rawKey.length} characters. Copy it again from the wallet.`)
+  process.exit(1)
+}
+const signer = rawKey ? privateKeyToAccount(`0x${rawKey}`) : null
+if (signer) console.log(`keeper wallet ${signer.address}`)
 const wallet = signer ? createWalletClient({ account: signer, chain, transport: http(RPC) }) : null
 
 const fmt = (x, d = 2) => Number(formatUnits(x, 18)).toLocaleString('en-US', { maximumFractionDigits: d })

@@ -30,6 +30,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
         run: |
+          set -o pipefail
           [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
           node keeper.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Scan and close the stress-test vault
@@ -39,6 +40,7 @@ jobs:
           VAULT: "0x41b230d37bB10cc005803CD780357d24Ae162731"
           FROM_BLOCK: "16781176"
         run: |
+          set -o pipefail
           [ -n "$VAULT" ] || { echo "No stress-test vault yet."; exit 0; }
           [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
           { echo; echo "## Stress-test vault"; } >> "$GITHUB_STEP_SUMMARY"
