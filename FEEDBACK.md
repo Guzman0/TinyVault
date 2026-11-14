@@ -32,12 +32,12 @@ Answers as the testers sent them.
 - **How much would you borrow, and what for?** Around 100 MUSD for unexpected expenses without selling my BTC.
 - **Did the close-line warning make sense; would you trust it?** Yes, I understood the warning and the 125% closing threshold. I would want to see how reliable the liquidation process is before committing real BTC.
 
-### Tester 2
+### Tester 2: [`0x0B43…d967`](https://explorer.test.mezo.org/address/0x0B43A638d049Bb08eafB302B264487AAb731d967)
 
-- **Borrowed against crypto before?** Yes. I've used DeFi lending platforms before, mostly for accessing liquidity without selling my assets.
-- **What was confusing or slow?** The separate transaction confirmations for adding collateral and borrowing. I expected the process to happen in one transaction.
-- **How much would you borrow, and what for?** Around 250 MUSD to cover short-term expenses while maintaining my Bitcoin exposure.
-- **Did the close-line warning make sense; would you trust it?** Yes. Having both the account's individual closing price and the shared loan's closing price is useful. I would still want an independent security audit before using real BTC.
+- **Borrowed against crypto before?** No. I've seen similar products, but I've never had a strong reason to use one.
+- **What was confusing or slow?** The concept itself is interesting, but I wanted to understand why I should use TinyVault instead of simply selling a small amount of BTC when I need money.
+- **How much would you borrow, and what for?** Maybe 100 MUSD. I'd consider it if I expected Bitcoin to appreciate and needed short-term liquidity.
+- **Did the close-line warning make sense; would you trust it?** Yes. My hesitation isn't really the warning. It's whether borrowing is worth the additional risk and cost compared with selling some BTC.
 
 ### Tester 3
 
@@ -62,17 +62,15 @@ Answers as the testers sent them.
 
 ### In short
 
-- 3 of 5 had never borrowed against crypto; two said loans looked built for bigger holders, or sold crypto instead.
+- 4 of 5 had never borrowed against crypto; some sold crypto instead, or found loans built for bigger holders.
 - They would borrow 30 to 300 MUSD, median 100, for expenses or short-term liquidity. Every amount is below Mezo's 1,800 MUSD minimum.
-- All five understood the close-line warning. Before real BTC, they want proof the close process is reliable, an independent audit, and a closer look at the shared loan's risk.
+- One asked the real question: why borrow instead of selling a little BTC? All five understood the close-line warning. Before real BTC, they want proof the close process is reliable and a closer look at the shared loan's risk.
 
 ## What changed because of it
 
 | They said | What we did |
 | --- | --- |
 | Shared loan took time to understand (testers 1, 4) | A "How it works" diagram, and a line under the first-loan button giving the price where Mezo can close the whole shared loan, before any BTC goes in |
-| Expected one transaction, got two (tester 2) | The first-loan button now says up front that the wallet asks twice. A single transaction needs a contract change, planned for the next version |
 | Wants alerts when not on the site (tester 3) | The alert toggle now says plainly it works while the page is open. Alerts by Telegram or email are on the roadmap; the keeper's public log already marks accounts near their line |
 | Wants to see interest and fees before repaying (tester 5) | The repay tab shows what has built up since the loan |
 | Wants proof closes are reliable (testers 1, 5) | The keeper now runs with a funded wallet and sends closes; the app shows when it last ran with a link to its log. A stress-test vault with tight settings shows a keeper close on chain |
-| Wants an independent audit (tester 2) | Listed as a mainnet requirement in SECURITY.md, with the anchor kept at 250% on chain |
