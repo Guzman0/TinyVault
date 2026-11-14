@@ -17,7 +17,7 @@ Questions asked:
 | [`0x87F4…6ee5`](https://explorer.test.mezo.org/address/0x87F451225907da77E23D8d5fE80982F272186ee5) | Main | Added 0.0039 BTC, borrowed, withdrew 0.0016 BTC; the loan that made the vault refinance with Mezo | 98 MUSD |
 | [`0x12E5…78DC`](https://explorer.test.mezo.org/address/0x12E5745b163D38F52073CF2113B094edAd3578DC) | Main | Added 0.005 BTC, borrowed, repaid 100 MUSD | 150 MUSD |
 | [`0x8bE1…f41A`](https://explorer.test.mezo.org/address/0x8bE1A8C923084E0C7351d295be07DAFce818f41A) | Main | Added 0.0229 BTC, borrowed in three loans | 1,020 MUSD |
-| [`0xaC88…1481`](https://explorer.test.mezo.org/address/0xaC88dbf072029bA3af94c8687f7EAfC5C91e1481) | Stress | Added 0.002 BTC, borrowed at the 116.5% limit, waiting for the keeper close | 111 MUSD |
+| [`0xaC88…1481`](https://explorer.test.mezo.org/address/0xaC88dbf072029bA3af94c8687f7EAfC5C91e1481) | Stress and main | On the stress vault: added 0.002 BTC and borrowed at the 116.5% limit, waiting for the keeper close. On the main vault: added BTC, borrowed and withdrew | 111 MUSD on the stress vault |
 
 Not counted: the anchor (Guzman's wallet) and the app's public demo wallet. The stress vault is [`0x41b230d37bB10cc005803CD780357d24Ae162731`](https://explorer.test.mezo.org/address/0x41b230d37bB10cc005803CD780357d24Ae162731).
 
