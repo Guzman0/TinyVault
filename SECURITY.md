@@ -40,6 +40,22 @@ Reviewed and not a problem:
 
 Slither after these changes: no new findings beyond `timestamp` notes on the 7-day grace period, which is intended.
 
+## How far the reserve reaches
+
+An account is closed at its own 125% line. If BTC falls past that line before anyone closes it, the closer still takes BTC worth the debt plus the 5% bonus, so the account only falls short once its ratio is below 105%. At a ratio `r` below that, the closer pays what the BTC covers, `coll × price / 1.05`, and the gap is `1 − r / 1.05` of the account's debt. The reserve pays that gap first; only what it cannot cover is shared across the remaining debt.
+
+The reserve fills from the fee on each loan, so at most it holds that fee's share of the money lent:
+
+| Ratio when the account is finally closed | Gap, as a share of its debt | Covered at 0.5% (today) | Covered at 2% (the cap) |
+| --- | --- | --- | --- |
+| 105% or more | none | yes | yes |
+| 104.5% | 0.5% | yes, just | yes |
+| 103% | 1.9% | no | yes, just |
+| 100% | 4.8% | no | no |
+| 90% | 14.3% | no | no |
+
+So a 0.5% reserve covers a fall of about 16% past an account's close line before it is closed, and 2% covers about 18%. That is a single fall between two keeper checks; the keeper runs every few hours on GitHub, and anyone else can close earlier for the bonus. A deeper crash in that window is shared across the debt that remains. The app shows the reserve as a share of what borrowers owe. Before mainnet: more than one keeper, a minimum reserve before new loans, and the anchor kept at 250% or more on chain.
+
 ## Known limits
 
 - If BTC falls far enough that the whole shared loan drops below Mezo's 110% line, Mezo can liquidate it,

@@ -297,6 +297,11 @@ function FirstLoan({ onDone }: { onDone: (s: string) => void }) {
         }}
       />
       <small className="muted">Two confirmations in your wallet: one to add the BTC, one to borrow.</small>
+      <small className="muted">
+        Your loan is part of one shared Mezo loan. Besides your own close line, if BTC falls to{' '}
+        {fmtUsd(toNum(sharedClosePrice(v)))} Mezo can close the whole shared loan, and accounts that still owe lose their BTC
+        but keep the MUSD they borrowed.
+      </small>
     </div>
   )
 }

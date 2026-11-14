@@ -5,6 +5,7 @@ import { closeAccount } from '../lib/actions'
 import { explorerAddress } from '../lib/chain'
 import { fmtBtc, fmtMusd, fmtPct, fmtRatio, fmtUsd, shortAddr, toNum } from '../lib/format'
 import { Gauge, TxButton } from './ui'
+import { KeeperStatus } from './KeeperStatus'
 
 export function Accounts() {
   const { accounts, params, vault, account, wallet, loading } = useApp()
@@ -19,6 +20,7 @@ export function Accounts() {
       <p className="muted">
         Each account closes at the first of two prices: its own {fmtPct(params.closeRatio)} line, or the price where Mezo closes the whole shared loan ({fmtUsd(toNum(sharedClosePrice(vault)))}). Below {Math.round(toNum(params.closeRatio) * 100)}% anyone can close an account: they pay its debt and receive its BTC worth the debt plus {Math.round(toNum(params.closeBonus) * 100)}%. The rest stays with the owner, and no other account is touched.
       </p>
+      <KeeperStatus />
       <div className="table">
         <div className="tr th"><span>Account</span><span>BTC</span><span>Owes</span><span>Health</span><span /></div>
         {loading && rows.length === 0 && <div className="empty">Reading accounts from Mezo testnet</div>}

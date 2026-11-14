@@ -86,6 +86,19 @@ The app's "Redeem MUSD with Mezo" section calls Mezo's `redeemCollateral` with h
 
 On testnet, Guzman funds it: 0.05 BTC against Mezo's 1,800 MUSD minimum, at about 186%. On mainnet a backer does the same at 250% or more: Mezo, a partner or a treasury. Its cost is Mezo's interest on about 2,000 MUSD of anchor debt (at today's 1%, about 20 MUSD a year), and it keeps the MUSD it borrowed. The 0.5% fee on each loan covers that after about 4,000 MUSD of loans a year, 40 people borrowing 100 MUSD. Past that, fees fill the reserve and then pay the backer. The wind-down lets the backer exit with all its BTC, and closers earn 5% of each close, so keepers pay for themselves.
 
+## What the owner can and cannot do
+
+The owner is the wallet that deployed the vault (Guzman's on testnet). Ownership moves only in two steps: the new owner has to accept it.
+
+| The owner can | The owner cannot |
+| --- | --- |
+| Open the shared loan once, as the anchor | Move, freeze or take anyone's BTC or MUSD |
+| Set the reserve fee on new loans, up to 2% (0.5% today) | Change the borrowing limit, the close line, the closer's bonus or the smallest loan; they are fixed at deployment |
+| Shut the vault down: no new deposits or loans, while repaying and withdrawing keep working | Stop anyone repaying, withdrawing or closing an unsafe account |
+| Withdraw the reserve, but only after the wind-down has closed the Mezo loan and every account can take all its BTC back | Upgrade or replace the contract; it has no proxy and no admin key beyond these |
+
+Closing an account below its line, and closing the Mezo loan once nobody owes, are open to anyone.
+
 ## Security
 
 Slither static analysis was run on the vault; the one real finding (rounding in a view) is fixed and the rest are reviewed in [SECURITY.md](SECURITY.md), with the known limits.

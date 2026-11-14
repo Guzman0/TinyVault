@@ -106,7 +106,7 @@ export function NotifyToggle({ account, m, p, v }: { account: Address; m: Accoun
   }
   return (
     <button className="notify" onClick={toggle} aria-pressed={on}>
-      {on ? 'Alerts on in this browser' : 'Alert me before my account nears its close line'}
+      {on ? 'Alerts on in this browser, while this page is open' : 'Alert me before my account nears its close line (works while this page stays open in a tab)'}
     </button>
   )
 }

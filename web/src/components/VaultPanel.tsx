@@ -7,7 +7,7 @@ import { Stat } from './ui'
 import { WindDown } from './Status'
 
 export function VaultPanel() {
-  const { vault } = useApp()
+  const { vault, accounts } = useApp()
   if (!vault) return null
   const ONE = 10n ** 18n
   return (
@@ -22,7 +22,7 @@ export function VaultPanel() {
         <Stat k="BTC in the loan" v={fmtBtc(vault.troveColl)} sub={`Worth ${fmtUsd(toNum(vault.troveColl * vault.price / ONE))}`} />
         <Stat k="Owed to Mezo" v={fmtMusd(vault.troveDebt, 0)} sub="Includes Mezo's 200 MUSD gas deposit" />
         <Stat k="Ratio Mezo sees" v={vault.closed ? 'Closed' : fmtRatio(vault.ratio)} sub={vault.closed ? "Mezo's line is 110%" : `Mezo's line is 110%: BTC at ${fmtUsd(toNum(sharedClosePrice(vault)))}`} />
-        <Stat k="Reserve" v={fmtMusd(vault.reserve)} sub="Pays first if an account falls short" />
+        <Stat k="Reserve" v={fmtMusd(vault.reserve)} sub={`Pays first if an account falls short. ${coverage(vault, accounts)}`} />
         {vault.troveCap > 0n && !vault.closed && (
           <Stat
             k="Room left to borrow"
@@ -72,4 +72,12 @@ function ShareBar() {
       </figcaption>
     </figure>
   )
+}
+
+/** The reserve as a share of what borrowers (not the anchor) owe. */
+function coverage(v: { reserve: bigint; anchor: string }, accounts: { address: string; debt: bigint }[]) {
+  const owed = accounts.filter((a) => a.address.toLowerCase() !== v.anchor.toLowerCase()).reduce((s, a) => s + a.debt, 0n)
+  if (owed === 0n) return 'No borrowers owe yet.'
+  const pct = Number((v.reserve * 10000n) / owed) / 100
+  return `${pct.toFixed(2)}% of what borrowers owe.`
 }
