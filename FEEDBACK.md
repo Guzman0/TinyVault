@@ -46,12 +46,12 @@ Answers as the testers sent them.
 - **How much would you borrow, and what for?** Approximately 50 MUSD for small personal expenses or emergencies.
 - **Did the close-line warning make sense; would you trust it?** Yes. The percentage indicator was easy to understand. I would like to receive alerts even when I'm not actively using the website.
 
-### Tester 4
+### Tester 4: [`0x12E5…78DC`](https://explorer.test.mezo.org/address/0x12E5745b163D38F52073CF2113B094edAd3578DC)
 
-- **Borrowed against crypto before?** Yes, but only through centralized platforms. This was my first experience with a shared on-chain borrowing arrangement.
-- **What was confusing or slow?** Understanding how individual accounts are connected to the shared Mezo loan. The account breakdown helped, but I had to spend some time examining it.
-- **How much would you borrow, and what for?** Around 300 MUSD for temporary business liquidity.
-- **Did the close-line warning make sense; would you trust it?** Yes. However, the shared loan's liquidation risk is something I would pay close attention to before depositing significant BTC.
+- **Borrowed against crypto before?** Yes. I've used lending and liquidity protocols, mainly to put idle assets to work.
+- **What was confusing or slow?** I wanted to understand the reserve fee and how the borrowing costs compare with other options. The product explains the mechanics, but I would still calculate the actual cost before using it.
+- **How much would you borrow, and what for?** Around 150 MUSD. I'd potentially use it in another DeFi opportunity, provided the expected return justified the borrowing cost.
+- **Did the close-line warning make sense; would you trust it?** Yes. The individual account breakdown is useful. However, I'd be more interested in how the reserve performs when multiple accounts become unhealthy around the same time.
 
 ### Tester 5: [`0x8bE1…f41A`](https://explorer.test.mezo.org/address/0x8bE1A8C923084E0C7351d295be07DAFce818f41A)
 
@@ -63,16 +63,17 @@ Answers as the testers sent them.
 ### In short
 
 - 3 of 5 had never borrowed against crypto; two said loans looked built for bigger portfolios, and one wanted only 10 to 20 MUSD.
-- They would borrow 10 to 300 MUSD, median 100, for expenses or short-term liquidity. Every amount is below Mezo's 1,800 MUSD minimum.
+- They would borrow 10 to 250 MUSD, median 100, for expenses, short-term liquidity or another DeFi position. Every amount is below Mezo's 1,800 MUSD minimum.
 - One asked the real question: why borrow instead of selling a little BTC? All five understood the close-line warning. Before real BTC, they want proof the close process is reliable and a closer look at the shared loan's risk.
 
 ## What changed because of it
 
 | They said | What we did |
 | --- | --- |
-| Shared loan took time to understand (tester 4) | A "How it works" diagram, and a line under the first-loan button giving the price where Mezo can close the whole shared loan, before any BTC goes in |
+| Less familiar with the shared-loan structure than with ordinary borrowing (tester 5) | A "How it works" diagram, and a line under the first-loan button giving the price where Mezo can close the whole shared loan, before any BTC goes in |
 | Wants alerts when not on the site (tester 3) | The alert toggle now says plainly it works while the page is open. Alerts by Telegram or email are on the roadmap; the keeper's public log already marks accounts near their line |
+| Wants the reserve fee and the full cost of a loan up front (tester 4) | The borrow preview lists each fee (0.5% reserve, Mezo's 0.1%, and any limit update) and how much more than the loan a full payoff takes |
 | Wants to know how much BTC a small loan needs (tester 1) | The calculator shows it before connecting a wallet, and the first-loan box works out the BTC for a 200% start from the MUSD wanted |
 | Wants to see how borrowing costs change what has to be repaid (tester 5) | The repay tab now says how much of the debt is fees and interest built up since the loan |
 | Watches the BTC left after partial withdrawals (tester 5) | Already in the withdraw preview: the BTC left, the ratio after, and the new close price |
-| Watches the shared loan's risk before depositing much (tester 4) | The keeper now runs with a funded wallet and sends closes; the app shows when it last ran with a link to its log. A stress-test vault with tight settings shows a keeper close on chain |
+| Wants to know how the reserve holds up when several accounts go bad at once (tester 4) | The keeper now runs with a funded wallet and sends closes; the app shows when it last ran with a link to its log. A stress-test vault with tight settings shows a keeper close on chain. SECURITY.md now models how far the reserve reaches: at 0.5% it covers BTC falling about 16% past an account's close line before it is closed; beyond that the gap is shared across the remaining debt |
