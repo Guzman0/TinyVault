@@ -25,12 +25,12 @@ Not counted: the anchor (Guzman's wallet) and the app's public demo wallet. The 
 
 Answers as the testers sent them.
 
-### Tester 1
+### Tester 1: [`0x87F4…6ee5`](https://explorer.test.mezo.org/address/0x87F451225907da77E23D8d5fE80982F272186ee5)
 
-- **Borrowed against crypto before?** No. I usually sell some of my crypto whenever I need liquidity. I never considered borrowing because most platforms seemed designed for people with larger holdings.
-- **What was confusing or slow?** Understanding how the shared loan works took a little time, but the How It Works section made it easier to understand.
-- **How much would you borrow, and what for?** Around 100 MUSD for unexpected expenses without selling my BTC.
-- **Did the close-line warning make sense; would you trust it?** Yes, I understood the warning and the 125% closing threshold. I would want to see how reliable the liquidation process is before committing real BTC.
+- **Borrowed against crypto before?** No. Most platforms I've seen seem to cater to people with much larger portfolios. I never thought my small BTC balance would be useful as collateral.
+- **What was confusing or slow?** Honestly, not much. I understood the basic process after going through the steps. I just wanted to know how much BTC I needed to deposit to borrow a small amount.
+- **How much would you borrow, and what for?** 10–20 MUSD. That's the interesting part for me. I don't necessarily need thousands of dollars.
+- **Did the close-line warning make sense; would you trust it?** Yes. I would just make sure I had enough room between my current ratio and the closing threshold.
 
 ### Tester 2: [`0x0B43…d967`](https://explorer.test.mezo.org/address/0x0B43A638d049Bb08eafB302B264487AAb731d967)
 
@@ -62,16 +62,17 @@ Answers as the testers sent them.
 
 ### In short
 
-- 3 of 5 had never borrowed against crypto; some sold crypto instead, or found loans built for bigger holders.
-- They would borrow 50 to 300 MUSD, median 100, for expenses or short-term liquidity. Every amount is below Mezo's 1,800 MUSD minimum.
+- 3 of 5 had never borrowed against crypto; two said loans looked built for bigger portfolios, and one wanted only 10 to 20 MUSD.
+- They would borrow 10 to 300 MUSD, median 100, for expenses or short-term liquidity. Every amount is below Mezo's 1,800 MUSD minimum.
 - One asked the real question: why borrow instead of selling a little BTC? All five understood the close-line warning. Before real BTC, they want proof the close process is reliable and a closer look at the shared loan's risk.
 
 ## What changed because of it
 
 | They said | What we did |
 | --- | --- |
-| Shared loan took time to understand (testers 1, 4) | A "How it works" diagram, and a line under the first-loan button giving the price where Mezo can close the whole shared loan, before any BTC goes in |
+| Shared loan took time to understand (tester 4) | A "How it works" diagram, and a line under the first-loan button giving the price where Mezo can close the whole shared loan, before any BTC goes in |
 | Wants alerts when not on the site (tester 3) | The alert toggle now says plainly it works while the page is open. Alerts by Telegram or email are on the roadmap; the keeper's public log already marks accounts near their line |
+| Wants to know how much BTC a small loan needs (tester 1) | The calculator shows it before connecting a wallet, and the first-loan box works out the BTC for a 200% start from the MUSD wanted |
 | Wants to see how borrowing costs change what has to be repaid (tester 5) | The repay tab now says how much of the debt is fees and interest built up since the loan |
 | Watches the BTC left after partial withdrawals (tester 5) | Already in the withdraw preview: the BTC left, the ratio after, and the new close price |
-| Wants proof closes are reliable (testers 1, 5) | The keeper now runs with a funded wallet and sends closes; the app shows when it last ran with a link to its log. A stress-test vault with tight settings shows a keeper close on chain |
+| Watches the shared loan's risk before depositing much (tester 4) | The keeper now runs with a funded wallet and sends closes; the app shows when it last ran with a link to its log. A stress-test vault with tight settings shows a keeper close on chain |
