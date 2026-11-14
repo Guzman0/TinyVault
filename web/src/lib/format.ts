@@ -50,9 +50,15 @@ export function errorText(e: unknown): string {
     IsClosed: 'The shared Mezo loan was closed. You can only withdraw.',
     NotOpen: 'The vault has not opened its Mezo loan yet.',
     ZeroAmount: 'Enter an amount.',
+    RecoveryMode: 'Mezo is in Recovery Mode, so this is paused. Repaying still works.',
+    IsShutdown: 'The vault is winding down: no new deposits or loans.',
   }
   for (const [k, v] of Object.entries(known)) if (msg.includes(k)) return v
   if (/insufficient funds/i.test(msg)) return 'Not enough BTC in this wallet for that amount plus gas.'
   if (/ERC20InsufficientBalance|transfer amount exceeds balance/i.test(msg)) return 'Not enough MUSD in this wallet.'
+  // A rejection with no reason given is usually Mezo's testnet node or the wallet's own check
+  // failing for a moment, not a problem with the request itself.
+  if (/reverted with the following reason:\s*$|reverted\.?\s*$|execution reverted\s*$/i.test(msg.split('\n')[0].trim()))
+    return 'Mezo testnet turned this down without giving a reason. Nothing was sent. Wait a few seconds and try again; if it keeps happening, reload the page.'
   return msg.split('\n')[0]
 }

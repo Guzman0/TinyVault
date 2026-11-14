@@ -14,7 +14,15 @@ async function send(wallet: WalletClient, account: Address, step: Step, label: s
   // Mezo's re-sorting of troves can cost more by the time a transaction lands than when it was
   // estimated, so every transaction carries a 30% margin over the estimate.
   const call = { ...req, account: signer } as Parameters<WalletClient['writeContract']>[0]
-  const est = await publicClient.estimateContractGas({ ...(call as object), account: signer } as Parameters<typeof publicClient.estimateContractGas>[0])
+  // Mezo's testnet node sometimes rejects a check for a moment; try once more before giving up.
+  const estimate = () => publicClient.estimateContractGas({ ...(call as object), account: signer } as Parameters<typeof publicClient.estimateContractGas>[0])
+  let est: bigint
+  try {
+    est = await estimate()
+  } catch (first) {
+    await new Promise((r) => setTimeout(r, 1500))
+    try { est = await estimate() } catch { throw first }
+  }
   const hash = await wallet.writeContract({ ...call, gas: (est * 13n) / 10n } as Parameters<WalletClient['writeContract']>[0])
   step('Waiting for Mezo to confirm')
   await waitFor(hash)
