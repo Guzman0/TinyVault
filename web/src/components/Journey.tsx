@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../state'
 import type { Tab } from './AccountPanel'
 import { OTHER_VAULT } from '../lib/config'
-import { errorText, fmtBtc, fmtMusd, fmtRatio } from '../lib/format'
+import { errorText, fmtBtc, fmtMusd, fmtRatio, fmtUsd, toNum } from '../lib/format'
+import { effectiveClosePrice } from '../lib/data'
 
 /** Open the account box on a tab and bring it into view. */
 export function goTo(tab?: Tab) {
@@ -66,15 +67,16 @@ export function Journey() {
  * one thing you are most likely to do next.
  */
 export function FollowBar() {
-  const { account, me, connect } = useApp()
-  const [show, setShow] = useState(false)
+  const { account, me, vault, connect } = useApp()
+  // Where the account box is: scrolled past, still below the screen, or in view.
+  const [where, setWhere] = useState<'above' | 'below' | 'in'>('in')
   useEffect(() => {
     let frame = 0
     const check = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
         const r = document.getElementById('account')?.getBoundingClientRect()
-        setShow(!!r && r.bottom < 0)
+        setWhere(!r ? 'in' : r.bottom < 0 ? 'above' : r.top > window.innerHeight ? 'below' : 'in')
       })
     }
     check()
@@ -83,8 +85,10 @@ export function FollowBar() {
     return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', check); window.removeEventListener('resize', check) }
   }, [])
 
-  if (!show) return null
   const has = !!me && (me.coll > 0n || me.debt > 0n)
+  // On a phone the account box sits below the intro, so a borrower sees their loan from the top too.
+  const show = where === 'above' || (where === 'below' && !!account && has && window.innerWidth <= 640)
+  if (!show) return null
   return (
     <div className="followbar" role="region" aria-label="Your loan">
       {account && has && me ? (
@@ -92,6 +96,9 @@ export function FollowBar() {
           <span className="followbar-pos">
             <b className="mono">{fmtMusd(me.debt, 2)}</b> owed<span className="followbar-btc"> on <b className="mono">{fmtBtc(me.coll)}</b></span>
             {me.debt > 0n && <span className="followbar-ratio">{fmtRatio(me.ratio)}</span>}
+            <span className="followbar-more">
+              {me.debt > 0n && vault ? `Closes at ${fmtUsd(toNum(effectiveClosePrice(me, vault, account)))}, ` : ''}can borrow {fmtMusd(me.maxBorrow, 0)}
+            </span>
           </span>
           <span className="followbar-actions">
             {me.debt > 0n && <button className="btn small" onClick={() => goTo('repay')}>Repay</button>}

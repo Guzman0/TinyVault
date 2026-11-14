@@ -18,12 +18,13 @@ Questions asked:
 | [`0x12E5…78DC`](https://explorer.test.mezo.org/address/0x12E5745b163D38F52073CF2113B094edAd3578DC) | Main | Added 0.005 BTC, borrowed, repaid 100 MUSD | 150 MUSD |
 | [`0x8bE1…f41A`](https://explorer.test.mezo.org/address/0x8bE1A8C923084E0C7351d295be07DAFce818f41A) | Main | Added 0.0229 BTC, borrowed in three loans | 1,020 MUSD |
 | [`0xaC88…1481`](https://explorer.test.mezo.org/address/0xaC88dbf072029bA3af94c8687f7EAfC5C91e1481) | Stress and main | On the stress vault: added 0.002 BTC and borrowed at the 116.5% limit, waiting for the keeper close. On the main vault: added BTC, borrowed and withdrew | 111 MUSD on the stress vault |
+| [`0xff2C…a1B1`](https://explorer.test.mezo.org/address/0xff2Cc179D118d4B809a4De9eAf44D4ace695a1B1) | Main | Added 0.0031 BTC, borrowed 100 MUSD, repaid 100 and withdrew the BTC; then added 0.01 BTC and borrowed again | 533 MUSD in two loans |
 
 Not counted: the anchor (Guzman's wallet) and the app's public demo wallet. The stress vault is [`0x41b230d37bB10cc005803CD780357d24Ae162731`](https://explorer.test.mezo.org/address/0x41b230d37bB10cc005803CD780357d24Ae162731).
 
 ## What they said
 
-Answers as the testers sent them.
+Answers as the testers sent them, in their own words.
 
 ### Tester 1: [`0x87F4…6ee5`](https://explorer.test.mezo.org/address/0x87F451225907da77E23D8d5fE80982F272186ee5)
 
@@ -60,11 +61,18 @@ Answers as the testers sent them.
 - **How much would you borrow, and what for?** Around 250 MUSD. I'd use it for temporary liquidity rather than keeping a large amount of MUSD sitting idle in my wallet.
 - **Did the close-line warning make sense; would you trust it?** Yes. The BTC price at which the account closes is more useful to me than just seeing a percentage. I'd also pay attention to the amount of BTC left after partial withdrawals.
 
+### Tester 6: [`0xff2C…a1B1`](https://explorer.test.mezo.org/address/0xff2Cc179D118d4B809a4De9eAf44D4ace695a1B1)
+
+- **Borrowed against crypto before?** No. I mostly use crypto for holding and occasional transfers. Lending protocols have always looked a bit complicated to me.
+- **What was confusing or slow?** There is a lot of information on the page. I like the design, but on a smaller screen I'd prefer to see the amount I can borrow, what I owe and the main risk without scrolling through several sections.
+- **How much would you borrow, and what for?** Around 40 MUSD for an emergency expense.
+- **Did the close-line warning make sense; would you trust it?** Yes. The coloured indicator helped. I'd like the alert to be something I can receive on my phone without leaving the website open.
+
 ### In short
 
-- 3 of 5 had never borrowed against crypto: one thought loans were built for bigger portfolios, one did not know BTC could be borrowed against, one never had a reason to.
-- They would borrow 10 to 250 MUSD, median 100, for expenses, short-term liquidity or another DeFi position. Every amount is below Mezo's 1,800 MUSD minimum.
-- One asked the real question: why borrow instead of selling a little BTC? All five understood the close-line warning. Before real BTC, they want proof the close process is reliable and a closer look at the shared loan's risk.
+- 4 of 6 had never borrowed against crypto: one thought loans were built for bigger portfolios, one did not know BTC could be borrowed against, one found lending protocols complicated, one never had a reason to.
+- They would borrow 10 to 250 MUSD, median about 70, for expenses, short-term liquidity or another DeFi position. Every amount is below Mezo's 1,800 MUSD minimum.
+- One asked the real question: why borrow instead of selling a little BTC? All six understood the close-line warning. Before real BTC, they want proof the close process is reliable and a closer look at the shared loan's risk.
 
 ## What changed because of it
 
@@ -74,6 +82,8 @@ Answers as the testers sent them.
 | Read How it works twice; didn't see why everyone shares one loan (tester 3) | The How it works section leads with the reason: Mezo's smallest loan is 1,800 MUSD, so one shared loan is what lets anyone borrow 10 MUSD. A line before the first loan now gives the shared loan's own close price |
 | Wouldn't risk BTC on something not understood (tester 3) | The close-line warning gives a BTC price, not just a percentage, and two one-tap fixes |
 | Wants the reserve fee and the full cost of a loan up front (tester 4) | The borrow preview lists each fee (0.5% reserve, Mezo's 0.1%, and any limit update) and how much more than the loan a full payoff takes |
+| On a phone, wants what they can borrow, owe and the main risk without scrolling (tester 6) | On a phone, a bar at the bottom of the screen now shows the debt, ratio, close price and what is left to borrow from the top of the page, with Repay and Borrow buttons |
+| Wants alerts on the phone without the site open (tester 6) | Not built yet: alerts work only while the page is open, and the toggle says so. Push or Telegram alerts are the next step; the keeper's public log already marks accounts near their line |
 | Wants to know how much BTC a small loan needs (tester 1) | The calculator shows it before connecting a wallet, and the first-loan box works out the BTC for a 200% start from the MUSD wanted |
 | Wants to see how borrowing costs change what has to be repaid (tester 5) | The repay tab now says how much of the debt is fees and interest built up since the loan |
 | Watches the BTC left after partial withdrawals (tester 5) | Already in the withdraw preview: the BTC left, the ratio after, and the new close price |
