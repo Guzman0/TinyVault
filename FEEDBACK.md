@@ -39,12 +39,12 @@ Answers as the testers sent them.
 - **How much would you borrow, and what for?** Maybe 100 MUSD. I'd consider it if I expected Bitcoin to appreciate and needed short-term liquidity.
 - **Did the close-line warning make sense; would you trust it?** Yes. My hesitation isn't really the warning. It's whether borrowing is worth the additional risk and cost compared with selling some BTC.
 
-### Tester 3
+### Tester 3: [`0xaC88…1481`](https://explorer.test.mezo.org/address/0xaC88dbf072029bA3af94c8687f7EAfC5C91e1481) (stress-test vault)
 
-- **Borrowed against crypto before?** No. I had seen crypto-backed loans before but never tried one because I wasn't comfortable with the collateral requirements.
-- **What was confusing or slow?** I initially wasn't sure how the borrowing limit was calculated. The collateral ratio and borrowing capacity helped clarify it.
-- **How much would you borrow, and what for?** Approximately 50 MUSD for small personal expenses or emergencies.
-- **Did the close-line warning make sense; would you trust it?** Yes. The percentage indicator was easy to understand. I would like to receive alerts even when I'm not actively using the website.
+- **Borrowed against crypto before?** No. I didn't even know you could borrow money using Bitcoin without selling it. I normally just leave my BTC in my wallet.
+- **What was confusing or slow?** I had to read the How It Works section twice. I didn't understand why everyone was using one loan instead of having separate loans.
+- **How much would you borrow, and what for?** Maybe 30–50 MUSD. Probably for something urgent rather than borrowing just because I can.
+- **Did the close-line warning make sense; would you trust it?** The warning made sense after I understood the percentages. I wouldn't want to lose my Bitcoin over something I didn't understand, though.
 
 ### Tester 4: [`0x12E5…78DC`](https://explorer.test.mezo.org/address/0x12E5745b163D38F52073CF2113B094edAd3578DC)
 
@@ -62,7 +62,7 @@ Answers as the testers sent them.
 
 ### In short
 
-- 3 of 5 had never borrowed against crypto; two said loans looked built for bigger portfolios, and one wanted only 10 to 20 MUSD.
+- 3 of 5 had never borrowed against crypto: one thought loans were built for bigger portfolios, one did not know BTC could be borrowed against, one never had a reason to.
 - They would borrow 10 to 250 MUSD, median 100, for expenses, short-term liquidity or another DeFi position. Every amount is below Mezo's 1,800 MUSD minimum.
 - One asked the real question: why borrow instead of selling a little BTC? All five understood the close-line warning. Before real BTC, they want proof the close process is reliable and a closer look at the shared loan's risk.
 
@@ -71,7 +71,8 @@ Answers as the testers sent them.
 | They said | What we did |
 | --- | --- |
 | Less familiar with the shared-loan structure than with ordinary borrowing (tester 5) | A "How it works" diagram, and a line under the first-loan button giving the price where Mezo can close the whole shared loan, before any BTC goes in |
-| Wants alerts when not on the site (tester 3) | The alert toggle now says plainly it works while the page is open. Alerts by Telegram or email are on the roadmap; the keeper's public log already marks accounts near their line |
+| Read How it works twice; didn't see why everyone shares one loan (tester 3) | The How it works section leads with the reason: Mezo's smallest loan is 1,800 MUSD, so one shared loan is what lets anyone borrow 10 MUSD. A line before the first loan now gives the shared loan's own close price |
+| Wouldn't risk BTC on something not understood (tester 3) | The close-line warning gives a BTC price, not just a percentage, and two one-tap fixes |
 | Wants the reserve fee and the full cost of a loan up front (tester 4) | The borrow preview lists each fee (0.5% reserve, Mezo's 0.1%, and any limit update) and how much more than the loan a full payoff takes |
 | Wants to know how much BTC a small loan needs (tester 1) | The calculator shows it before connecting a wallet, and the first-loan box works out the BTC for a 200% start from the MUSD wanted |
 | Wants to see how borrowing costs change what has to be repaid (tester 5) | The repay tab now says how much of the debt is fees and interest built up since the loan |

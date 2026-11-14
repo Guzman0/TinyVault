@@ -22,6 +22,10 @@ export function HowItWorks() {
 
   return (
     <div className="how">
+      <p className="how-why">
+        <b>Why one shared loan?</b> Every loan on Mezo must be at least {min} MUSD, so a {from} MUSD loan of your own is not allowed.
+        TinyVault opens one loan big enough for Mezo and splits it between everyone, each with their own BTC, debt and limit.
+      </p>
       <div className="how-flow" ref={flow}>
         <svg className="how-beams" ref={svg} aria-hidden="true" />
         <div className="how-node">
