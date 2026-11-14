@@ -36,8 +36,8 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
           # Second vault with tight settings (borrow to 116.5%, close below 115%); see README.
-          VAULT: ""
-          FROM_BLOCK: ""
+          VAULT: "0x1FB84dc19dd02AeACE82b1F4132000949329b657"
+          FROM_BLOCK: "16780939"
         run: |
           [ -n "$VAULT" ] || { echo "No stress-test vault yet."; exit 0; }
           [ -n "$PRIVATE_KEY" ] || unset PRIVATE_KEY
