@@ -41,7 +41,9 @@ function Page() {
       {loadError && <div className="notice bad">{loadError}</div>}
       {OTHER_VAULT && (
         <div className="notice warn">
-          You are looking at {ADDR.vault.toLowerCase() === WAVE1_VAULT.toLowerCase() ? 'the Wave 1 vault' : 'another vault'}, {ADDR.vault.slice(0, 6)}…{ADDR.vault.slice(-4)}. It has no wind-down, so repay and withdraw here, then use the <a href={import.meta.env.BASE_URL}>current vault</a>.
+          {ADDR.vault.toLowerCase() === WAVE1_VAULT.toLowerCase()
+            ? <>You are looking at the Wave 1 vault, {ADDR.vault.slice(0, 6)}…{ADDR.vault.slice(-4)}. It has no wind-down, so repay and withdraw here, then use the <a href={import.meta.env.BASE_URL}>current vault</a>.</>
+            : <>You are looking at vault {ADDR.vault.slice(0, 6)}…{ADDR.vault.slice(-4)}, not the main one. Repay and withdraw here; new loans go in the <a href={import.meta.env.BASE_URL}>main vault</a>.</>}
         </div>
       )}
       {IS_STRESS && params && (
