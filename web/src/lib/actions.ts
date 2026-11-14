@@ -23,7 +23,17 @@ async function send(wallet: WalletClient, account: Address, step: Step, label: s
     await new Promise((r) => setTimeout(r, 1500))
     try { est = await estimate() } catch { throw first }
   }
-  const hash = await wallet.writeContract({ ...call, gas: (est * 13n) / 10n } as Parameters<WalletClient['writeContract']>[0])
+  let hash: `0x${string}`
+  try {
+    hash = await wallet.writeContract({ ...call, gas: (est * 13n) / 10n } as Parameters<WalletClient['writeContract']>[0])
+  } catch (e) {
+    // Mezo accepted this a moment ago, so a "reverted" now comes from the wallet's own check, not
+    // from the chain. Some wallets (MetaMask mobile among them) refuse Mezo transactions this way.
+    const msg = (e as { shortMessage?: string; message?: string })?.shortMessage ?? (e as Error)?.message ?? ''
+    if (/revert/i.test(msg) && !/user rejected|denied/i.test(msg))
+      throw new Error('WALLET_REFUSED')
+    throw e
+  }
   step('Waiting for Mezo to confirm')
   await waitFor(hash)
   return hash
