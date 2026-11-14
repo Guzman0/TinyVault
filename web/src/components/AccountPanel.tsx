@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../state'
 import { addMezo, hasWallet } from '../lib/chain'
 import { effectiveClosePrice, loadAccount, MEZO_MCR, refinanceFee, sharedClosePrice } from '../lib/data'
-import { borrow, claimMusd, deposit, repay, withdraw } from '../lib/actions'
+import { borrow, claimMusd, deposit, repay, swapBtcForMusd, withdraw } from '../lib/actions'
 import { fmtBtc, fmtMusd, fmtNum, fmtPct, fmtRatio, fmtUsd, toNum, toWei, errorText } from '../lib/format'
 import { Gauge, Stat, TxButton } from './ui'
 import { CloseAlert, NotifyToggle } from './CloseAlert'
@@ -134,7 +134,8 @@ function PayOff() {
     return (
       <div className="payoff">
         <h3>{fmtMusd(m.debt, 2)} left to repay</h3>
-        <p>Repay it to take back the last {fmtBtc(m.coll)}. Your wallet has no MUSD yet: swap a little BTC for MUSD in <a href="https://mezo.org/docs/users/features/mezo-swap" target="_blank" rel="noreferrer">Mezo Swap</a>, or ask a friend to send some, then come back here.</p>
+        <p>Repay it to take back the last {fmtBtc(m.coll)}. Your wallet has no MUSD yet: swap a little BTC for it below, in Mezo's own BTC/MUSD pool, or ask a friend to send some.</p>
+        <SwapForMusd need={m.debt} />
       </div>
     )
   }
@@ -161,8 +162,27 @@ function PayOff() {
           return withdraw(wallet, account, out, (s) => step(`Step 2 of 2. ${s}`))
         }}
       />
-      {!full && <small className="muted">To clear the last {fmtMusd(short, 2)}, swap a little BTC for MUSD in <a href="https://mezo.org/docs/users/features/mezo-swap" target="_blank" rel="noreferrer">Mezo Swap</a>, or ask a friend for it.</small>}
+      {!full && (
+        <>
+          <small className="muted">Or pay it all off now: swap a little BTC for the {fmtMusd(short, 2)} in Mezo's own BTC/MUSD pool first, then this button repays everything.</small>
+          <SwapForMusd need={short} />
+        </>
+      )}
     </div>
+  )
+}
+
+/** Swaps just enough BTC for MUSD in Mezo's pool to cover `need`, plus a little for interest. */
+function SwapForMusd({ need }: { need: bigint }) {
+  const { account, wallet } = useApp()
+  const want = need + 10n ** 18n / 2n // 0.5 MUSD spare: interest keeps adding while you swap
+  if (!account || !wallet) return null
+  return (
+    <TxButton
+      label={`Swap BTC for ${fmtMusd(want, 2)}`}
+      done="Swapped. The MUSD is in your wallet: pay off above."
+      run={(s) => swapBtcForMusd(wallet, account, want, s)}
+    />
   )
 }
 

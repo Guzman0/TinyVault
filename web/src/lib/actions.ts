@@ -140,3 +140,36 @@ export async function redeem(w: WalletClient, a: Address, amount: bigint, price:
   await send(w, a, step, 'record it in the vault (sync)', { ...v, functionName: 'sync', args: [] } as never)
   return hash
 }
+
+// Mezo Pools on testnet: BTC is also an ERC-20 at 0x7b7C…, and the BTC/MUSD pool is a volatile pool.
+const BTC_TOKEN = '0x7b7C000000000000000000000000000000000000' as Address
+const ROUTER = '0x9a1ff7FE3a0F69959A3fBa1F1e5ee18e1A9CD7E9' as Address
+const POOL_FACTORY = '0x4947243CC818b627A5D06d14C4eCe7398A23Ce1A' as Address
+const routerAbi = parseAbi([
+  'struct Route { address from; address to; bool stable; address factory; }',
+  'function getAmountsOut(uint256 amountIn, Route[] routes) view returns (uint256[] amounts)',
+  'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, Route[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
+])
+const ROUTE = [{ from: BTC_TOKEN, to: ADDR.musd, stable: false, factory: POOL_FACTORY }] as const
+
+/** The BTC to swap in Mezo's BTC/MUSD pool for at least `musdOut`, with 3% to spare for price moves. */
+export async function quoteBtcForMusd(musdOut: bigint) {
+  const probe = 10n ** 15n
+  const [, out] = await publicClient.readContract({ address: ROUTER, abi: routerAbi, functionName: 'getAmountsOut', args: [probe, ROUTE] })
+  if (out === 0n) throw new Error("Mezo's BTC/MUSD pool returned no price.")
+  return (musdOut * probe * 103n) / (out * 100n) + 1n
+}
+
+/** Swaps a little BTC for MUSD in Mezo's own BTC/MUSD pool, so a loan's fees can be paid off here. */
+export async function swapBtcForMusd(w: WalletClient, a: Address, musdOut: bigint, step: Step) {
+  step("Pricing the swap in Mezo's BTC/MUSD pool")
+  const btcIn = await quoteBtcForMusd(musdOut)
+  const allowance = await publicClient.readContract({ address: BTC_TOKEN, abi: erc20Abi, functionName: 'allowance', args: [a, ROUTER] })
+  if (allowance < btcIn) {
+    await send(w, a, step, 'let Mezo Swap use this much BTC', { address: BTC_TOKEN, abi: erc20Abi, functionName: 'approve', args: [ROUTER, btcIn], chain: mezoTestnet } as never)
+  }
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+  return send(w, a, step, `swap ${(Number(btcIn) / 1e18).toFixed(6)} BTC for MUSD`, {
+    address: ROUTER, abi: routerAbi, functionName: 'swapExactTokensForTokens', args: [btcIn, musdOut, ROUTE, a, deadline], chain: mezoTestnet,
+  } as never)
+}
