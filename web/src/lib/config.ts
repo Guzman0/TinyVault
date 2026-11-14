@@ -6,6 +6,8 @@ export const mezoTestnet = defineChain({
   nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 },
   rpcUrls: { default: { http: ['https://rpc.test.mezo.org'] } },
   blockExplorers: { default: { name: 'Mezo Explorer', url: 'https://explorer.test.mezo.org' } },
+  // Multicall3 at its usual address on Mezo testnet: the app reads many values in one request.
+  contracts: { multicall3: { address: '0xcA11bde05977b3631167028862bE2a173976CA11' } },
   testnet: true,
 })
 

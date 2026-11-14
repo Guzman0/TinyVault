@@ -46,7 +46,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLoadError(null)
     try {
       // The account and the vault come first; the event history can take a while on a long chain.
-      const history = Promise.all([loadAccounts(), loadActivity().catch(() => [])])
       const [p, v, m, b] = await Promise.all([
         loadParams(), loadVault(),
         account ? loadAccount(account) : Promise.resolve(null),
@@ -54,7 +53,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ])
       setParams(p); setVault(v); setMe(m); setBalances(b)
       setLoading(false)
-      const [list, act] = await history
+      // The history scans many blocks, so it starts only once your account is on screen.
+      const [list, act] = await Promise.all([loadAccounts(), loadActivity().catch(() => [])])
       setAccounts(list); setActivity(act)
     } catch (e) {
       setLoadError(`Could not read the vault from Mezo testnet: ${errorText(e)}`)

@@ -1,7 +1,14 @@
 import { createPublicClient, createWalletClient, custom, http, type Address, type Hash, type WalletClient } from 'viem'
 import { mezoTestnet } from './config'
 
-export const publicClient = createPublicClient({ chain: mezoTestnet, transport: http() })
+// Contract reads made together go through Multicall3 as one request: on a phone, one round trip
+// instead of thirty is most of the wait. Log scans stay separate requests, which Mezo's RPC
+// answers in parallel; batched into one, it answers them one after another.
+export const publicClient = createPublicClient({
+  chain: mezoTestnet,
+  transport: http(),
+  batch: { multicall: { wait: 16 } },
+})
 
 type Eip1193 = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown>; on?: (e: string, cb: (...a: unknown[]) => void) => void }
 
