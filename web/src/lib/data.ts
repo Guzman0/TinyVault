@@ -169,6 +169,8 @@ export interface Activity {
   text: string
   hash: `0x${string}`
   block: bigint
+  /** MUSD received for a loan, or paid for a repayment. */
+  amount?: bigint
 }
 
 const fmt = (x: bigint, d = 2) => (Number(x) / 1e18).toLocaleString('en-US', { maximumFractionDigits: d })
@@ -204,7 +206,8 @@ export async function loadActivity(): Promise<Activity[]> {
         case 'VaultClosed': item = ['redeem', ADDR.vault, `Mezo closed the shared loan; the vault recorded it and claimed the ${fmt(a.surplus, 5)} BTC left over`]; break
         case 'MusdClaimed': item = ['claim', a.account, `claimed ${fmt(a.amount)} MUSD`]; break
       }
-      if (item) out.push({ time: timeOf(l.blockNumber), kind: item[0], account: item[1], text: item[2], hash: l.transactionHash, block: l.blockNumber })
+      const amount = l.eventName === 'Borrowed' || l.eventName === 'Repaid' ? (a.amount as bigint) : undefined
+      if (item) out.push({ time: timeOf(l.blockNumber), kind: item[0], account: item[1], text: item[2], hash: l.transactionHash, block: l.blockNumber, amount })
     }
     const refis = await publicClient.getLogs({ address: ADDR.borrowerOps, event: refinanced, args: { _borrower: ADDR.vault }, fromBlock, toBlock }).catch(() => [])
     for (const l of refis) {

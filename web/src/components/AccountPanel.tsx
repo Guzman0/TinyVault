@@ -307,7 +307,7 @@ function FirstLoan({ onDone }: { onDone: (s: string) => void }) {
 }
 
 function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setAmount: (s: string) => void }) {
-  const { account, wallet, me, params, vault, balances } = useApp()
+  const { account, wallet, me, params, vault, balances, activity } = useApp()
   const wei = toWei(amount)
   const p = params!, v = vault!, m = me!, b = balances!
   const price = v.price
@@ -381,6 +381,13 @@ function ActionForm({ tab, amount, setAmount }: { tab: Tab; amount: string; setA
           {tab === 'deposit' && `In your wallet: ${fmtBtc(b.btc)}`}
           {tab === 'borrow' && `From ${fmtNum(toNum(p.minBorrow), 0)} MUSD. Mezo's own minimum is ${fmtNum(toNum(v.minNetDebt), 0)} MUSD.`}
           {tab === 'repay' && `In your wallet: ${fmtMusd(b.musd)}`}
+          {tab === 'repay' && account && (() => {
+            // What you received minus what you paid back; the rest of the debt is fees and interest.
+            const mine = activity.filter((x) => x.account.toLowerCase() === account.toLowerCase() && x.amount !== undefined)
+            const net = mine.reduce((s, x) => (x.kind === 'borrow' ? s + x.amount! : s - x.amount!), 0n)
+            const built = m.debt > net && net > 0n ? m.debt - net : 0n
+            return built > 0n ? `. Of what you owe, ${fmtMusd(built, 2)} is fees and interest since you borrowed ${fmtMusd(net, 2)} (net of repayments).` : ''
+          })()}
           {tab === 'withdraw' && `Free to withdraw: ${fmtBtc(max)}`}
         </small>
       </label>
