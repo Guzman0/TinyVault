@@ -41,7 +41,7 @@ export function toWei(s: string) {
 export function errorText(e: unknown): string {
   const msg = (e as { shortMessage?: string; message?: string })?.shortMessage ?? (e as Error)?.message ?? String(e)
   if (/user rejected|denied/i.test(msg)) return 'You cancelled the request in your wallet.'
-  if (msg.includes('WALLET_REFUSED')) return 'Mezo accepts this, but your wallet refused to send it. Nothing was sent. Try again; if it keeps happening, use another wallet such as Bitget or Rabby. MetaMask mobile sometimes refuses Mezo transactions.'
+  if (msg.includes('WALLET_REFUSED')) return 'Mezo accepts this, but your wallet refused to send it. Nothing was sent. The MetaMask mobile app sometimes refuses Mezo transactions; MetaMask on a computer, or Bitget or Rabby on a phone, sends them fine.'
   const known: Record<string, string> = {
     Unhealthy: 'That would take your account below the 150% limit. Borrow or withdraw less, or add BTC.',
     BelowMinBorrow: 'The smallest loan is 10 MUSD.',
