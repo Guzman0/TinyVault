@@ -20,8 +20,8 @@ export const WAVE1_VAULT = '0x8724a13AfAF230311AC0f69e5979f42058EF248b' as Addre
  * Mezo loan kept at the low end of Mezo's list so that keeper closes, refinances and Mezo
  * redemptions happen within hours on testnet. Open the app with ?vault=stress.
  */
-export const STRESS_VAULT = (env.VITE_STRESS_VAULT || '0x1FB84dc19dd02AeACE82b1F4132000949329b657') as Address | ''
-const STRESS_BLOCK = env.VITE_STRESS_BLOCK || '16780939'
+export const STRESS_VAULT = (env.VITE_STRESS_VAULT || '0x41b230d37bB10cc005803CD780357d24Ae162731') as Address | ''
+const STRESS_BLOCK = env.VITE_STRESS_BLOCK || '16781176'
 
 const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search)
 const asked = query.get('vault')
